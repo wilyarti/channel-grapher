@@ -127,6 +127,7 @@ class App extends Component {
         //this.state.config.datasets[0].label = 'updated field name'
         //this.forceUpdate()
     }
+    //test
 
     refreshClickHandler() {
         this.setState({isLoading: true})
