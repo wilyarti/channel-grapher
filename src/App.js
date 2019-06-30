@@ -10,6 +10,9 @@ import Navbar from 'react-bootstrap/Navbar';
 import Dropdown from 'react-bootstrap/Dropdown';
 import Form from 'react-bootstrap/Form';
 import Row from 'react-bootstrap/Row';
+import Tab from 'react-bootstrap/Tab'
+import Tabs from 'react-bootstrap/Tabs'
+
 import Alert from 'react-bootstrap/Alert';
 import Col from 'react-bootstrap/Col';
 import Button from 'react-bootstrap/Button';
@@ -22,6 +25,7 @@ import TimezonePicker from 'react-bootstrap-timezone-picker';
 import 'react-bootstrap-timezone-picker/dist/react-bootstrap-timezone-picker.min.css';
 import moment from 'moment';
 import 'moment-timezone';
+import ContainerDimensions from 'react-container-dimensions'
 
 class App extends Component {
     constructor(props) {
@@ -66,8 +70,9 @@ class App extends Component {
             timeScale: '',
             sumMinutes: '',
             averageMinutes: '',
-            medianMinutes: ''
-
+            medianMinutes: '',
+            selectedTab: 'config',
+            dimensions: {width: 600, height: 800}
         };
         this.handleDatePicker = this.handleDatePicker.bind(this);
         this.refreshClickHandler = this.refreshClickHandler.bind(this)
@@ -90,6 +95,7 @@ class App extends Component {
         this.handleSumMinutes = this.handleSumMinutes.bind(this)
         this.handleAverageMinutes = this.handleAverageMinutes.bind(this)
         this.handleMedianMinutes = this.handleMedianMinutes.bind(this)
+        this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
     }
 
     handleDatePicker(date) {
@@ -156,21 +162,21 @@ class App extends Component {
     }
 
     handleMinValues(e) {
-        const re = /^[0-9\b]+$/;
+        const re = /^[0-9\b\.]+$/;
         if (e.target.value === '' || re.test(e.target.value)) {
             this.setState({minValues: e.target.value})
         }
     }
 
     handleMaxValues(e) {
-        const re = /^[0-9\b]+$/;
+        const re = /^[0-9\b\.]+$/;
         if (e.target.value === '' || re.test(e.target.value)) {
             this.setState({maxValues: e.target.value})
         }
     }
 
     handleRoundPlaces(e) {
-        const re = /^[0-9\b]+$/;
+        const re = /^[0-9\b\.]+$/;
         if (e.target.value === '' || re.test(e.target.value)) {
             this.setState({roundPlaces: e.target.value})
         }
@@ -207,10 +213,6 @@ class App extends Component {
 
     thingSpeakValidatorClickHandler() {
         this.setState({isLoading: true})
-        console.log(this.state.thingSpeakID)
-        let tempConfig = this.state.config
-        tempConfig.datasets[0].label = "updated"
-        this.setState({config: tempConfig})
         const APIKEY = this.state.thingSpeakAPIKey ? `&api_key=${this.state.thingSpeakAPIKey}` : ''
         const thingSpeakQuery = `https://api.thingspeak.com/channels/${this.state.thingSpeakID}/feeds.json?&${APIKEY}`;
         console.log(JSON.stringify({url: thingSpeakQuery}))
@@ -254,16 +256,12 @@ class App extends Component {
                 this.setState({'errorBody': "Error" + error})
 
             }).finally(() => (this.setState({isLoading: false})));
-
-        //this.state.config.datasets[0].label = 'updated field name'
-        //this.forceUpdate()
     }
 
     //test
 
     refreshClickHandler() {
         this.setState({isLoading: true})
-        console.log(this.state.thingSpeakID)
         const APIKEY = this.state.thingSpeakAPIKey ? `&api_key=${this.state.thingSpeakAPIKey}` : ''
         const RESULTS = this.state.numResults ? `&results=${this.state.numResults}` : ''
         const DAYS = this.state.numDays ? `&days=${this.state.numDays}` : ''
@@ -305,14 +303,25 @@ class App extends Component {
                 }
                 this.setState({config: tempConfig})
                 console.log(this, this.state)
+                this.setState({selectedTab: "graph"})
                 this.forceUpdate()
             })
             .catch((error) => {
                 console.error(error);
             }).finally(() => (this.setState({isLoading: false})));
+    }
 
-        //this.state.config.datasets[0].label = 'updated field name'
-        //this.forceUpdate()
+    componentDidMount() {
+        this.updateWindowDimensions();
+        window.addEventListener('resize', this.updateWindowDimensions);
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('resize', this.updateWindowDimensions);
+    }
+
+    updateWindowDimensions() {
+        this.setState({ dimensions: { width: window.innerWidth, height: (window.innerHeight-50) }});
     }
 
     render() {
@@ -327,81 +336,37 @@ class App extends Component {
         })
         return (
             <Container fluid>
-                <Navbar bg="dark" variant="dark"> <Dropdown>
-                    <Dropdown.Toggle variant="success" id="dropdown-basic">
-                        <Menu/> OpenS3
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu>
-                        <Dropdown.Item href="#/action-1">Action</Dropdown.Item>
-                        <Dropdown.Item href="#/action-2">Another action</Dropdown.Item>
-                        <Dropdown.Item href="#/action-3">Something else</Dropdown.Item>
-                    </Dropdown.Menu>
-                </Dropdown></Navbar>
-                <br/>
-                <Card>
-                    <Card.Header>Configurator</Card.Header>
-                    <Card.Body>
+                <Tabs defaultActiveKey="config" id="tabs" activeKey={this.state.selectedTab}
+                      onSelect={key => this.setState({selectedTab: key})}>
+                    <Tab eventKey="config" title="Configurator">
                         <Form.Row>
-                            <Col>
+                            <Col sm={4}>
                                 <Form.Group controlId="validThingSpeak">
-                                    <Form.Label>ThingSpeak ID</Form.Label>
                                     <Form.Control value={this.state.thingSpeakID} onChange={this.handleThingSpeakID}
-                                                  type="text" placeholder="645847" required/>
+                                                  type="text" placeholder="ThingSpeak ID" required/>
                                     <Form.Control.Feedback type="invalid">
                                         Please provide a valid ThingSpeakID.
                                     </Form.Control.Feedback>
                                 </Form.Group>
-                            </Col>
-                            <Col>
+
                                 <Form.Group controlId="validThingSpeakFieldID">
-                                    <Form.Label>Read API Key</Form.Label>
                                     <Form.Control value={this.state.thingSpeakAPIKey}
                                                   onChange={this.handleThingSpeakAPIKey}
-                                                  type="text" placeholder="optional" required/>
+                                                  type="text" placeholder="Read API Key" required/>
                                     <Form.Control.Feedback type="invalid">
                                         Please provide a valid ThingSpeak API key.
                                     </Form.Control.Feedback>
                                 </Form.Group>
-                            </Col>
-                        </Form.Row>
-                        <Form.Row>
-                            <Col>
-                                <Button variant="primary" disabled={this.state.isLoading}
-                                        onClick={!this.state.isLoading ? this.thingSpeakValidatorClickHandler : null}>
-                                    {this.state.isLoading ? <Spinner
-                                        as="span"
-                                        animation="grow"
-                                        size="sm"
-                                        role="status"
-                                        aria-hidden="true"
-                                    /> : 'Load Channel'}
-                                </Button>
-                            </Col>
-                        </Form.Row>
-                        <br/>
-                        <Form.Row>
-                            {this.state.showAlert &&
-                            <Alert variant="danger" onClose={handleDismiss} dismissible>
-                                <Alert.Heading>{this.state.errorHeading}</Alert.Heading>
-                                {this.state.errorBody}
-                            </Alert>
-                            }
-                        </Form.Row>
 
-                        <hr/>
-                        <Form.Row>
-                            <Col>
                                 <Form.Group controlId="validFieldID">
-                                    <Form.Label>Field ID</Form.Label>
                                     <Form.Control as="select" value={this.state.thingSpeakFieldID}
                                                   onChange={this.handleThingSpeakFieldID}
-                                                  type="text" placeholder="optional" required>
+                                                  type="text" required>
                                         {optionItems}
                                     </Form.Control>
                                 </Form.Group>
 
                                 <Form.Group controlId="validTimeZone">
-                                    <Form.Label>Select Time Zone</Form.Label>
                                     <br/>
                                     <TimezonePicker
                                         absolute={false}
@@ -416,12 +381,15 @@ class App extends Component {
                                     <DatetimeRangePicker
                                         onChange={this.handleDateRange}/>
                                 </Form.Group>
+
                             </Col>
-                            <Col>
+
+                            <Col sm={3}>
                                 <Form.Group controlId="validNumResults">
-                                    <Form.Label>Number of Results</Form.Label>
+                                    <Form.Label></Form.Label>
                                     <Form.Control value={this.state.numResults} onChange={this.handleNumResults}
                                                   type="text"
+                                                  placeholder="Number of Results"
                                                   isInvalid={this.state.numResults > 8000}
                                                   disabled={this.state.numDays || this.state.numMinutes}
                                                   required/>
@@ -432,9 +400,9 @@ class App extends Component {
                                 </Form.Group>
 
                                 <Form.Group controlId="validNumDays">
-                                    <Form.Label>Number of Days</Form.Label>
                                     <Form.Control value={this.state.numDays} onChange={this.handleNumDays}
                                                   type="text"
+                                                  placeholder="Number of Days"
                                                   isInvalid={this.state.numDays > 31}
                                                   disabled={this.state.numResults || this.state.numMinutes}
                                                   required/>
@@ -445,9 +413,9 @@ class App extends Component {
                                 </Form.Group>
 
                                 <Form.Group controlId="validNumMinutes">
-                                    <Form.Label>Number of Minutes</Form.Label>
                                     <Form.Control value={this.state.numMinutes} onChange={this.handleNumMinutes}
                                                   type="text"
+                                                  placeholder="Number of Minutes"
                                                   isInvalid={this.state.numMinutes > 1440}
                                                   disabled={this.state.numDays || this.state.numResults}
                                                   required/>
@@ -456,11 +424,56 @@ class App extends Component {
                                         selectors.
                                     </Form.Control.Feedback>
                                 </Form.Group>
-                            </Col>
-                        </Form.Row>
+                                <Form.Group controlId="validTimeScale">
+                                    <Form.Control value={this.state.timeScale} onChange={this.handleTimeScale}
+                                                  type="text" isInvalid={this.state.timeScale > 1440}
+                                                  placeholder="Value every x minutes"
+                                                  disabled={(this.state.sumMinutes || this.state.averageMinutes || this.state.medianMinutes)}
+                                                  required/>
+                                    <Form.Control.Feedback type="invalid">
+                                        Please provide a number less than 1440. Do not use in combination with other
+                                        selectors.
+                                    </Form.Control.Feedback>
+                                </Form.Group>
 
-                        <Form.Row>
-                            <Col>
+                                <Form.Group controlId="validSumMinutes">
+                                    <Form.Control value={this.state.sumMinutes} onChange={this.handleSumMinutes}
+                                                  type="text" isInvalid={this.state.sumMinutes > 1440}
+                                                  placeholder="Sum of x minutes"
+                                                  disabled={(this.state.timeScale || this.state.averageMinutes || this.state.medianMinutes)}
+                                                  required/>
+                                    <Form.Control.Feedback type="invalid">
+                                        Please provide a number less than 1440. Do not use in combination with other
+                                        selectors.
+                                    </Form.Control.Feedback>
+                                </Form.Group>
+
+                                <Form.Group controlId="validAverageMinutes">
+                                    <Form.Control value={this.state.averageMinutes} onChange={this.handleAverageMinutes}
+                                                  type="text" isInvalid={this.state.averageMinutes > 1440}
+                                                  placeholder="Average of x minutes"
+                                                  disabled={(this.state.sumMinutes || this.state.timeScale || this.state.medianMinutes)}
+                                                  required/>
+                                    <Form.Control.Feedback type="invalid">
+                                        Please provide a number less than 1440. Do not use in combination with other
+                                        selectors.
+                                    </Form.Control.Feedback>
+                                </Form.Group>
+
+                                <Form.Group controlId="validMedianMinutes">
+                                    <Form.Control value={this.state.medianMinutes} onChange={this.handleMedianMinutes}
+                                                  type="text" isInvalid={this.state.medianMinutes > 1440}
+                                                  placeholder="Median of x minutes"
+                                                  disabled={(this.state.sumMinutes || this.state.averageMinutes || this.state.timeScale)}
+                                                  required/>
+                                    <Form.Control.Feedback type="invalid">
+                                        Please provide a number less than 1440. Do not use in combination with other
+                                        selectors.
+                                    </Form.Control.Feedback>
+                                </Form.Group>
+                            </Col>
+
+                            <Col sm={4}>
                                 <Form.Group controlId="booleanStatus">
                                     <Form.Check
                                         id={`booleanStatus`}
@@ -487,104 +500,69 @@ class App extends Component {
                                         value={this.state.booleanLocation}
                                     />
                                 </Form.Group>
-                            </Col>
-
-
-                            <Col>
                                 <Form.Group controlId="validRoundPlaces">
-                                    <Form.Label>Round To This Many Decimal Places</Form.Label>
-                                    <Form.Control value={this.state.roundPlaces} onChange={this.handleRoundPlaces}
+                                    <Form.Control value={this.state.roundPlaces}
+                                                  placeholder="Round To This Many Decimal Places"
+                                                  onChange={this.handleRoundPlaces}
                                                   type="text" required/>
                                 </Form.Group>
 
                                 <Form.Group controlId="validMinValues">
-                                    <Form.Label>Minimum Values To Include</Form.Label>
-                                    <Form.Control value={this.state.minValues} onChange={this.handleMinValues}
+                                    <Form.Control value={this.state.minValues} placeholder="Minimum Values To Include"
+                                                  onChange={this.handleMinValues}
                                                   type="text" required/>
                                 </Form.Group>
 
                                 <Form.Group controlId="validMaxValues">
-                                    <Form.Label>Maximum Values To Include</Form.Label>
-                                    <Form.Control value={this.state.maxValues} onChange={this.handleMaxValues}
+                                    <Form.Control value={this.state.maxValues} placeholder="Maximum Values To Include"
+                                                  onChange={this.handleMaxValues}
                                                   type="text" required/>
                                 </Form.Group>
-                            </Col>
 
-                            <Col>
-                                <Form.Group controlId="validTimeScale">
-                                    <Form.Label>Get The First Value in This Many Minutes</Form.Label>
-                                    <Form.Control value={this.state.timeScale} onChange={this.handleTimeScale}
-                                                  type="text" isInvalid={this.state.timeScale > 1440}
-                                                  disabled={(this.state.sumMinutes || this.state.averageMinutes || this.state.medianMinutes)}
-                                                  required/>
-                                    <Form.Control.Feedback type="invalid">
-                                        Please provide a number less than 1440. Do not use in combination with other
-                                        selectors.
-                                    </Form.Control.Feedback>
-                                </Form.Group>
-
-                                <Form.Group controlId="validSumMinutes">
-                                    <Form.Label>Get The Sum of This Many Minutes</Form.Label>
-                                    <Form.Control value={this.state.sumMinutes} onChange={this.handleSumMinutes}
-                                                  type="text" isInvalid={this.state.sumMinutes > 1440}
-                                                  disabled={(this.state.timeScale || this.state.averageMinutes || this.state.medianMinutes)}
-                                                  required/>
-                                    <Form.Control.Feedback type="invalid">
-                                        Please provide a number less than 1440. Do not use in combination with other
-                                        selectors.
-                                    </Form.Control.Feedback>
-                                </Form.Group>
-
-                                <Form.Group controlId="validAverageMinutes">
-                                    <Form.Label>Get The Average of This Many Minutes</Form.Label>
-                                    <Form.Control value={this.state.averageMinutes} onChange={this.handleAverageMinutes}
-                                                  type="text" isInvalid={this.state.averageMinutes > 1440}
-                                                  disabled={(this.state.sumMinutes || this.state.timeScale || this.state.medianMinutes)}
-                                                  required/>
-                                    <Form.Control.Feedback type="invalid">
-                                        Please provide a number less than 1440. Do not use in combination with other
-                                        selectors.
-                                    </Form.Control.Feedback>
-                                </Form.Group>
-
-                                <Form.Group controlId="validMedianMinutes">
-                                    <Form.Label>Get The Median of This Many Minutes</Form.Label>
-                                    <Form.Control value={this.state.medianMinutes} onChange={this.handleMedianMinutes}
-                                                  type="text" isInvalid={this.state.medianMinutes > 1440}
-                                                  disabled={(this.state.sumMinutes || this.state.averageMinutes || this.state.timeScale)}
-                                                  required/>
-                                    <Form.Control.Feedback type="invalid">
-                                        Please provide a number less than 1440. Do not use in combination with other
-                                        selectors.
-                                    </Form.Control.Feedback>
-                                </Form.Group>
                             </Col>
                         </Form.Row>
-
-                        <Button variant={!this.state.channelNotVerified ? 'primary' : 'danger'}
-                                disabled={(this.state.channelNotVerified || this.state.isLoading)}
-                                onClick={!(this.state.channelNotVerified || this.state.isLoading) ? this.refreshClickHandler : null}>
-                            {(this.state.isLoading) ? <Spinner
-                                as="span"
-                                animation="grow"
-                                size="sm"
-                                role="status"
-                                aria-hidden="true"
-                            /> : ''}
-                            {(this.state.channelNotVerified) ? 'Load Channel First' : 'Refresh'}
-                        </Button>
-                        <hr/>
+                        <Form.Row>
+                            <Col>
+                                <Button variant="primary" disabled={this.state.isLoading}
+                                        onClick={!this.state.isLoading ? this.thingSpeakValidatorClickHandler : null}>
+                                    {this.state.isLoading ? <Spinner
+                                        as="span"
+                                        animation="grow"
+                                        size="sm"
+                                        role="status"
+                                        aria-hidden="true"
+                                    /> : 'Load Channel'}
+                                </Button>
+                                <Button variant={!this.state.channelNotVerified ? 'primary' : 'danger'}
+                                        disabled={(this.state.channelNotVerified || this.state.isLoading)}
+                                        onClick={!(this.state.channelNotVerified || this.state.isLoading) ? this.refreshClickHandler : null}>
+                                    {(this.state.isLoading) ? <Spinner
+                                        as="span"
+                                        animation="grow"
+                                        size="sm"
+                                        role="status"
+                                        aria-hidden="true"
+                                    /> : ''}
+                                    {(this.state.channelNotVerified) ? 'Load Channel First' : 'Load Data'}
+                                </Button>
+                            </Col>
+                        </Form.Row>
+                        <br/>
+                        <Form.Row>
+                            {this.state.showAlert &&
+                            <Alert variant="danger" onClose={handleDismiss} dismissible>
+                                <Alert.Heading>{this.state.errorHeading}</Alert.Heading>
+                                {this.state.errorBody}
+                            </Alert>
+                            }
+                        </Form.Row>
                         {!this.state.isLoading && this.state.channelDescription}
-                    </Card.Body>
-                </Card>
-                <br/>
-                <Card>
-                    <Card.Header>{!this.state.isLoading && this.state.channelTitle}</Card.Header>
-                    <Card.Body>
+                    </Tab>
+                    <Tab id="graph" eventKey="graph" style={{height: this.state.dimensions.height}} title="Graph">
                         <Line
                             data={this.state.config}
-                            width={100}
-                            height={500}
+                            height={this.state.dimensions.height}
+                            width={this.state.dimensions.width}
                             options={{
                                 maintainAspectRatio: false,
                                 responsive: true,
@@ -611,13 +589,14 @@ class App extends Component {
                                         display: true,
                                         scaleLabel: {
                                             display: true,
-                                            labelString: "thsiosafsaf"
+                                            labelString: this.state.thingSpeakFieldID
                                         }
                                     }]
                                 }
                             }}
-                        /> </Card.Body>
-                </Card>
+                        />
+                    </Tab>
+                </Tabs>
             </Container>
         )
     }
