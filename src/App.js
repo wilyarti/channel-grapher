@@ -1,31 +1,24 @@
 import React, {Component} from 'react';
-import DatePicker from "react-datepicker";
 
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import {Menu} from 'react-feather';
-import Card from 'react-bootstrap/Card'
 import Container from 'react-bootstrap/Container';
-import Navbar from 'react-bootstrap/Navbar';
-import Dropdown from 'react-bootstrap/Dropdown';
 import Form from 'react-bootstrap/Form';
-import Row from 'react-bootstrap/Row';
 import Tab from 'react-bootstrap/Tab'
 import Tabs from 'react-bootstrap/Tabs'
-
 import Alert from 'react-bootstrap/Alert';
 import Col from 'react-bootstrap/Col';
 import Button from 'react-bootstrap/Button';
 import Spinner from 'react-bootstrap/Spinner';
 import {Line} from 'react-chartjs-2';
-import FormControl from 'react-bootstrap/FormControl'
 import "react-datepicker/dist/react-datepicker.css";
-import DatetimeRangePicker from 'react-datetime-range-picker';
-import TimezonePicker from 'react-bootstrap-timezone-picker';
 import 'react-bootstrap-timezone-picker/dist/react-bootstrap-timezone-picker.min.css';
+
 import moment from 'moment';
 import 'moment-timezone';
-import ContainerDimensions from 'react-container-dimensions'
+
+import DatetimeRangePicker from 'react-datetime-range-picker';
+import TimezonePicker from 'react-bootstrap-timezone-picker';
 
 class App extends Component {
     constructor(props) {
@@ -72,7 +65,11 @@ class App extends Component {
             averageMinutes: '',
             medianMinutes: '',
             selectedTab: 'config',
-            dimensions: {width: 600, height: 800}
+            dimensions: {width: 600, height: 800},
+            latitude: '',
+            longitude: '',
+            metadata: '',
+            elevation: ''
         };
         this.handleDatePicker = this.handleDatePicker.bind(this);
         this.refreshClickHandler = this.refreshClickHandler.bind(this)
@@ -110,7 +107,8 @@ class App extends Component {
     }
 
     handleThingSpeakFieldID(e) {
-        this.setState({thingSpeakFieldID: e.target.value});
+        this.setState({thingSpeakFieldID: e.target.value})
+        this.refreshClickHandler(e)
     }
 
     handleThingSpeakAPIKey(e) {
@@ -162,21 +160,21 @@ class App extends Component {
     }
 
     handleMinValues(e) {
-        const re = /^[0-9\b\.]+$/;
+        const re = /^[0-9\b.]+$/;
         if (e.target.value === '' || re.test(e.target.value)) {
             this.setState({minValues: e.target.value})
         }
     }
 
     handleMaxValues(e) {
-        const re = /^[0-9\b\.]+$/;
+        const re = /^[0-9\b.]+$/;
         if (e.target.value === '' || re.test(e.target.value)) {
             this.setState({maxValues: e.target.value})
         }
     }
 
     handleRoundPlaces(e) {
-        const re = /^[0-9\b\.]+$/;
+        const re = /^[0-9\b.]+$/;
         if (e.target.value === '' || re.test(e.target.value)) {
             this.setState({roundPlaces: e.target.value})
         }
@@ -248,6 +246,7 @@ class App extends Component {
                 this.setState({channelNotVerified: false})
                 console.log(this.state)
                 this.forceUpdate()
+                this.refreshClickHandler()
             })
             .catch((error) => {
                 console.error(error);
@@ -258,9 +257,7 @@ class App extends Component {
             }).finally(() => (this.setState({isLoading: false})));
     }
 
-    //test
-
-    refreshClickHandler() {
+    refreshClickHandler(e) {
         this.setState({isLoading: true})
         const APIKEY = this.state.thingSpeakAPIKey ? `&api_key=${this.state.thingSpeakAPIKey}` : ''
         const RESULTS = this.state.numResults ? `&results=${this.state.numResults}` : ''
@@ -279,7 +276,14 @@ class App extends Component {
         const SUM = this.state.sumMinutes ? `&sum=${this.state.sumMinutes}` : ''
         const AVERAGE = this.state.averageMinutes ? `&average=${this.state.averageMinutes}` : ''
         const MEDIAN = this.state.medianMinutes ? `&median=${this.state.medianMinutes}` : ''
-        const thingSpeakQuery = `https://api.thingspeak.com/channels/${this.state.thingSpeakID}/fields/${this.state.thingSpeakFieldID}.json?${APIKEY}${RESULTS}${DAYS}${MINUTES}${START}${END}${TIMEZONE}${STATUS}${METADATA}${LOCATION}${MIN}${MAX}${ROUND}${TIMESCALE}${SUM}${AVERAGE}${MEDIAN}`;
+        let FIELDID;
+        if (e) {
+            FIELDID = e.target.value;
+        } else {
+            FIELDID = this.state.thingSpeakFieldID
+        }
+        console.log(FIELDID)
+        const thingSpeakQuery = `https://api.thingspeak.com/channels/${this.state.thingSpeakID}/fields/${FIELDID}.json?${APIKEY}${RESULTS}${DAYS}${MINUTES}${START}${END}${TIMEZONE}${STATUS}${METADATA}${LOCATION}${MIN}${MAX}${ROUND}${TIMESCALE}${SUM}${AVERAGE}${MEDIAN}`;
         console.log(JSON.stringify({url: thingSpeakQuery}))
         fetch('/getJSON', {
             method: 'POST',
@@ -292,17 +296,27 @@ class App extends Component {
             .then((responseJson) => {
                 console.log(responseJson);
                 let tempConfig = this.state.config
-                let fieldID = this.state.thingSpeakFieldID
                 tempConfig.datasets[0].data = []
                 for (let i = 0, len = responseJson.map.feeds.myArrayList.length; i < len; i++) {
-                    console.log(moment(responseJson.map.feeds.myArrayList[i].map.created_at))
                     tempConfig.datasets[0].data.push({
                         x: moment(responseJson.map.feeds.myArrayList[i].map.created_at),
-                        y: parseFloat(responseJson.map.feeds.myArrayList[i].map["field" + fieldID.toString()])
+                        y: parseFloat(responseJson.map.feeds.myArrayList[i].map["field" + FIELDID.toString()])
                     });
                 }
                 this.setState({config: tempConfig})
-                console.log(this, this.state)
+                console.log(this.state)
+                if (responseJson.map.channel.map.latitude) {
+                    this.setState({latitude: responseJson.map.channel.map.latitude})
+                }
+                if (responseJson.map.channel.map.longitude) {
+                    this.setState({longitude: responseJson.map.channel.map.longitude})
+                }
+                if (responseJson.map.channel.map.metadata) {
+                    this.setState({metadata: responseJson.map.channel.map.metadata})
+                }
+                if (responseJson.map.channel.map.elevation) {
+                    this.setState({elevation: responseJson.map.channel.map.elevation})
+                }
                 this.setState({selectedTab: "graph"})
                 this.forceUpdate()
             })
@@ -326,7 +340,6 @@ class App extends Component {
 
     render() {
         const handleDismiss = () => this.setState({showAlert: false});
-        const handleShow = () => this.setState({showAlert: true});
         const fields = [1, 2, 3, 4, 5, 6, 7, 8];
         const optionItems = fields.map((field) => {
             let fieldName = "field_".concat(field)
@@ -358,13 +371,6 @@ class App extends Component {
                                     </Form.Control.Feedback>
                                 </Form.Group>
 
-                                <Form.Group controlId="validFieldID">
-                                    <Form.Control as="select" value={this.state.thingSpeakFieldID}
-                                                  onChange={this.handleThingSpeakFieldID}
-                                                  type="text" required>
-                                        {optionItems}
-                                    </Form.Control>
-                                </Form.Group>
 
                                 <Form.Group controlId="validTimeZone">
                                     <br/>
@@ -386,7 +392,6 @@ class App extends Component {
 
                             <Col sm={3}>
                                 <Form.Group controlId="validNumResults">
-                                    <Form.Label></Form.Label>
                                     <Form.Control value={this.state.numResults} onChange={this.handleNumResults}
                                                   type="text"
                                                   placeholder="Number of Results"
@@ -557,8 +562,20 @@ class App extends Component {
                             }
                         </Form.Row>
                         {!this.state.isLoading && this.state.channelDescription}
+                        {!this.state.isLoading && this.state.latitude && <Alert variant="info"  > Latitude: {this.state.latitude}  </Alert>}
+                        {!this.state.isLoading && this.state.longitude && <Alert variant="info"  > Longitude: {this.state.longitude}  </Alert>}
+                        {!this.state.isLoading && this.state.metadata && <Alert variant="info"  > Metadata: {this.state.metadata}  </Alert>}
+                        {!this.state.isLoading && this.state.elevation && <Alert variant="info"  > Elevation: {this.state.elevation}  </Alert>}
+
                     </Tab>
                     <Tab id="graph" eventKey="graph" style={{height: this.state.dimensions.height}} title="Graph">
+                        <Form.Group controlId="validFieldID">
+                            <Form.Control as="select" value={this.state.thingSpeakFieldID}
+                                          onChange={this.handleThingSpeakFieldID}
+                                          type="text" required>
+                                {optionItems}
+                            </Form.Control>
+                        </Form.Group>
                         <Line
                             data={this.state.config}
                             height={this.state.dimensions.height}

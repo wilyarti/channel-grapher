@@ -10,7 +10,6 @@ import io.ktor.http.content.*
 import io.ktor.features.*
 import io.ktor.features.ContentNegotiation
 import io.ktor.html.respondHtml
-import io.ktor.http.ContentDisposition.Companion.File
 import io.ktor.request.receive
 import io.ktor.response.respond
 import kotlinx.html.body
