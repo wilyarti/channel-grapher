@@ -17,7 +17,9 @@ import Spinner from 'react-bootstrap/Spinner';
 import {Line} from 'react-chartjs-2';
 import FormControl from 'react-bootstrap/FormControl'
 import "react-datepicker/dist/react-datepicker.css";
-
+import DatetimeRangePicker from 'react-datetime-range-picker';
+import TimezonePicker from 'react-bootstrap-timezone-picker';
+import 'react-bootstrap-timezone-picker/dist/react-bootstrap-timezone-picker.min.css';
 
 class App extends Component {
     constructor(props) {
@@ -47,6 +49,10 @@ class App extends Component {
             showAlert: '',
             errorHeading: '',
             errorBody: '',
+            numResults: '',
+            numDays: '',
+            numMinutes: '',
+            timeZone: '',
         };
         this.handleDatePicker = this.handleDatePicker.bind(this);
         this.refreshClickHandler = this.refreshClickHandler.bind(this)
@@ -54,6 +60,11 @@ class App extends Component {
         this.handleThingSpeakID = this.handleThingSpeakID.bind(this)
         this.handleThingSpeakFieldID = this.handleThingSpeakFieldID.bind(this)
         this.handleThingSpeakAPIKey = this.handleThingSpeakAPIKey.bind(this)
+        this.handleNumResults = this.handleNumResults.bind(this)
+        this.handleNumDays = this.handleNumDays.bind(this)
+        this.handleNumMinutes = this.handleNumMinutes.bind(this)
+        this.handleTimeZone = this.handleTimeZone.bind(this)
+        this.handleDateRange = this.handleDateRange.bind(this)
 
     }
 
@@ -61,7 +72,6 @@ class App extends Component {
         this.setState({
             startDate: date
         });
-        console.log(this.state);
     }
 
     handleThingSpeakID(e) {
@@ -76,6 +86,27 @@ class App extends Component {
         this.setState({thingSpeakAPIKey: e.target.value});
     }
 
+    handleNumResults(e) {
+        this.setState({numResults: e.target.value});
+    }
+
+    handleNumDays(e) {
+        this.setState({numDays: e.target.value});
+    }
+
+    handleNumMinutes(e) {
+        this.setState({numMinutes: e.target.value});
+    }
+
+    handleTimeZone(timezone) {
+        this.setState({timeZone: timezone});
+    }
+
+    handleDateRange(date) {
+        this.setState({startDate: date.start})
+        this.setState({endDate: date.end})
+        console.log(this.state)
+    }
 
     thingSpeakValidatorClickHandler() {
         this.setState({isLoading: true})
@@ -108,13 +139,15 @@ class App extends Component {
                 this.setState({channelTitle: responseJson.map.channel.map.name})
                 for (let i = 1; i < 8; i++) {
                     let fieldName = "field_".concat(i)
-                    if(responseJson.map.channel.map["field".concat(i)]) {
-                        this.setState({ [fieldName]: responseJson.map.channel.map["field".concat(i)]})
+                    console.log("Field idea: " + responseJson.map.channel.map["field".concat(i)])
+                    if (responseJson.map.channel.map["field".concat(i)]) {
+                        this.setState({[fieldName]: responseJson.map.channel.map["field".concat(i)]})
                     } else {
-                        this.setState({ [fieldName]: i})
+                        this.setState({[fieldName]: undefined})
                     }
                 }
                 console.log(this.state)
+                this.forceUpdate()
             })
             .catch((error) => {
                 console.error(error);
@@ -122,11 +155,12 @@ class App extends Component {
                 this.setState({'errorHeading': "Invalid settings"})
                 this.setState({'errorBody': "Error" + error})
 
-            }).finally(() => (        this.setState({isLoading: false}) ));
+            }).finally(() => (this.setState({isLoading: false})));
 
         //this.state.config.datasets[0].label = 'updated field name'
         //this.forceUpdate()
     }
+
     //test
 
     refreshClickHandler() {
@@ -135,7 +169,7 @@ class App extends Component {
         let tempConfig = this.state.config
         tempConfig.datasets[0].label = "updated"
         this.setState({config: tempConfig})
-        const thingSpeakQuery = `https://api.thingspeak.com/channels/${this.state.thingSpeakID}/feeds.json?&minutes=300&timezone=Australia/Brisbane`;
+        const thingSpeakQuery = `https://api.thingspeak.com/channels/${this.state.thingSpeakID}/feeds.json?&api_key=${this.state.thingSpeakAPIKey}&minutes=300&timezone=Australia/Brisbane`;
         console.log(JSON.stringify({url: thingSpeakQuery}))
         fetch('/getJSON', {
             method: 'POST',
@@ -150,7 +184,7 @@ class App extends Component {
             })
             .catch((error) => {
                 console.error(error);
-            }).finally(() => (        this.setState({isLoading: false}) ));
+            }).finally(() => (this.setState({isLoading: false})));
 
         //this.state.config.datasets[0].label = 'updated field name'
         //this.forceUpdate()
@@ -160,6 +194,15 @@ class App extends Component {
         const {isLoading} = this.state.isLoading;
         const handleDismiss = () => this.setState({showAlert: false});
         const handleShow = () => this.setState({showAlert: true});
+        const fields = [1, 2, 3, 4, 5, 6, 7, 8];
+        const optionItems = fields.map((field) => {
+            let fieldName = "field_".concat(field)
+            if (this.state[fieldName]) {
+                console.log(this.state[fieldName])
+                return (<option id={field}>{this.state[fieldName]}</option>)
+            }
+        })
+        console.log("Option Items: " + optionItems)
         return (
             <Container fluid>
                 <Navbar bg="dark" variant="dark"> <Dropdown>
@@ -176,14 +219,7 @@ class App extends Component {
                 <Card>
                     <Card.Header>Configurator</Card.Header>
                     <Card.Body>
-                        <p>Our Options THere.....
-                            channel_id <br/>
-                            feild_id <br/>
-                            format (json) <br/>
-                            api_key <b/>
-                            results - number - max 8000<br/>
-                            days - number to retrieve <br/>
-                            minutes - default 1440 minutes <br/>
+                        <p><br/>
                             start - YYYY-MM-DD%20HH:NN:SS <br/>
                             end - as above <br/>
                             timezone - identifier <br/>
@@ -198,7 +234,6 @@ class App extends Component {
                             sum -get the sum of this many minutes <br/>
                             average - get the average of this many minutes <br/>
                             median - get the median of this many minutes <br/>
-
                         </p>
                         <Form.Row>
                             <Form.Group controlId="validThingSpeak">
@@ -217,14 +252,7 @@ class App extends Component {
                                 <Form.Control as="select" value={this.state.thingSpeakFieldID}
                                               onChange={this.handleThingSpeakFieldID}
                                               type="text" placeholder="optional" required>
-                                    <option>{this.state.field_1}</option>
-                                    <option>{this.state.field_2}</option>
-                                    <option>{this.state.field_3}</option>
-                                    <option>{this.state.field_4}</option>
-                                    <option>{this.state.field_5}</option>
-                                    <option>{this.state.field_6}</option>
-                                    <option>{this.state.field_7}</option>
-                                    <option>{this.state.field_8}</option>
+                                    {optionItems}
                                 </Form.Control>
                             </Form.Group>
                         </Form.Row>
@@ -252,7 +280,6 @@ class App extends Component {
                         </Button>
 
                         {this.state.showAlert &&
-
                         <Alert variant="danger" onClose={handleDismiss} dismissible>
                             <Alert.Heading>{this.state.errorHeading}</Alert.Heading>
                             {this.state.errorBody}
@@ -262,12 +289,58 @@ class App extends Component {
                         <hr/>
 
                         <Form.Row>
-                            <Form.Label>Pick Date</Form.Label>
-                            <DatePicker
-                                selected={this.state.startDate}
-                                onChange={this.handleDatePicker}
-                            />
+                            <Form.Group controlId="validNumResults">
+                                <Form.Label>Number of Results</Form.Label>
+                                <Form.Control value={this.state.numResults} onChange={this.handleNumResults}
+                                              type="text" required/>
+                                <Form.Control.Feedback type="invalid">
+                                    Please provide a number less than 8000.
+                                </Form.Control.Feedback>
+                            </Form.Group>
                         </Form.Row>
+
+                        <Form.Row>
+                            <Form.Group controlId="validNumDays">
+                                <Form.Label>Number of Days</Form.Label>
+                                <Form.Control value={this.state.numDays} onChange={this.handleNumDays}
+                                              type="text" required/>
+                                <Form.Control.Feedback type="invalid">
+                                    Please provide a number less than 31.
+                                </Form.Control.Feedback>
+                            </Form.Group>
+                        </Form.Row>
+
+                        <Form.Row>
+                            <Form.Group controlId="validNumMinutes">
+                                <Form.Label>Number of Minutes</Form.Label>
+                                <Form.Control value={this.state.numMinutes} onChange={this.handleNumMinutes}
+                                              type="text" required/>
+                                <Form.Control.Feedback type="invalid">
+                                    Please provide a number less than 1440.
+                                </Form.Control.Feedback>
+                            </Form.Group>
+                        </Form.Row>
+
+                        <Form.Row>
+                            <Form.Group controlId="validDateRange">
+                                <Form.Label>Select Date Range</Form.Label>
+                                <DatetimeRangePicker
+                                    onChange={this.handleDateRange}/>
+                            </Form.Group>
+                        </Form.Row>
+
+                        <Form.Row>
+                            <Form.Group controlId="validTimeZone">
+                                <Form.Label>Select Time Zone</Form.Label>
+                                <TimezonePicker
+                                    absolute={false}
+                                    defaultValue="Australia/Brisbane"
+                                    placeholder="Select timezone..."
+                                    onChange={this.handleTimeZone}
+                                />
+                            </Form.Group>
+                        </Form.Row>
+
                         <Button variant="primary" disabled={isLoading}
                                 onClick={!isLoading ? this.refreshClickHandler : null}>
                             {isLoading ? <Spinner

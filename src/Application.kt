@@ -57,6 +57,7 @@ fun Application.module(testing: Boolean = false) {
             if (req.statusCode == 200) {
                 call.respond(req.jsonObject)
             } else {
+                print(req.jsonObject)
                 var stat = SuccessStatus("success", false)
                 call.respond(stat)
             }
