@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import ReactDOM from 'react-dom'
 
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -6,6 +7,8 @@ import Container from 'react-bootstrap/Container';
 import Form from 'react-bootstrap/Form';
 import Tab from 'react-bootstrap/Tab'
 import Tabs from 'react-bootstrap/Tabs'
+import NavDropdown from 'react-bootstrap/NavDropdown'
+import FormControl from 'react-bootstrap/FormControl'
 import Alert from 'react-bootstrap/Alert';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
@@ -18,8 +21,7 @@ import {Bar} from 'react-chartjs-2';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import 'react-bootstrap-timezone-picker/dist/react-bootstrap-timezone-picker.min.css';
-import moment from 'moment';
-import 'moment-timezone';
+import moment from 'moment-timezone';
 
 
 class App extends Component {
@@ -46,9 +48,16 @@ class App extends Component {
             bubbleGraphBoolean: false,
             lineGraphBoolean: true,
             dataSetID: 0,
+            showOptions: false,
+            optionsHeading: 'Graph Options',
+            showChannel: false,
+            channelHeading: '',
+            channelBody: '',
             thingSpeakID: '645847',
             thingSpeakFieldID: '1',
-            thingSpeakFieldName: 'Sensor ID',
+            thingSpeakFieldName: 'sensor',
+            thingSpeakPeriod: '',
+            xLabel: 'time',
             thingSpeakAPIKey: '',
             startDate: '',
             endDate: new Date(),
@@ -60,12 +69,13 @@ class App extends Component {
             numDays: '',
             dataSummaryInterval: 0,
             dataSummaryIntervalDescription: '',
-            selectedTab: 'config',
-            dimensions: {width: 600, height: 800},
+            dimensions: {width: 300, height: 300},
+            timeZone: moment.tz.guess(),
             latitude: '',
             longitude: '',
             metadata: '',
             elevation: '',
+            virgin: true
         };
         this.handleDatePicker = this.handleDatePicker.bind(this);
         this.refreshClickHandler = this.refreshClickHandler.bind(this)
@@ -73,6 +83,7 @@ class App extends Component {
         this.handleThingSpeakID = this.handleThingSpeakID.bind(this)
         this.handleThingSpeakFieldID = this.handleThingSpeakFieldID.bind(this)
         this.handleThingSpeakAPIKey = this.handleThingSpeakAPIKey.bind(this)
+        this.handleThingSpeakPeriod = this.handleThingSpeakPeriod.bind(this)
         this.handleNumDays = this.handleNumDays.bind(this)
         this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
         this.barGraphSelector = this.barGraphSelector.bind(this)
@@ -81,8 +92,8 @@ class App extends Component {
         this.setDataSummaryInterval30 = this.setDataSummaryInterval30.bind(this)
         this.setDataSummaryInterval60 = this.setDataSummaryInterval60.bind(this)
         this.setDataSummaryIntervalDaily = this.setDataSummaryIntervalDaily.bind(this)
-
-
+        this.toggleFill = this.toggleFill.bind(this)
+        this.randomColor = this.randomColor.bind(this)
     }
 
     barGraphSelector() {
@@ -93,8 +104,22 @@ class App extends Component {
         this.setState({lineGraphBoolean: true, barGraphBoolean: false, bubbleGraphBoolean: false})
     }
 
+    toggleFill() {
+        let tempConfig = this.state.config
+        tempConfig.datasets[0].fill = !tempConfig.datasets[0].fill
+        this.setState({config: tempConfig})
+    }
+
     bubbleGraphSelector() {
         this.setState({lineGraphBoolean: false, barGraphBoolean: false, bubbleGraphBoolean: true})
+    }
+
+    randomColor() {
+        let tempConfig = this.state.config
+        for (let i = 0; i < tempConfig.datasets.length; i++) {
+            tempConfig.datasets[i].borderColor = getRandomColor()
+        }
+        this.setState({config: tempConfig})
     }
 
     handleDatePicker(date) {
@@ -117,8 +142,10 @@ class App extends Component {
         this.lineGraphSelector()
         const numDays = this.state.numDays ? this.state.numDays : 1
         const start = moment(date).subtract(numDays, "days");
-        this.setState({startDate: start, endDate: date, config: defaultConfig, dataSetID: 0, dataSummaryInterval: 0,
-            dataSummaryIntervalDescription: ''})
+        this.setState({
+            startDate: start, endDate: date, config: defaultConfig, dataSetID: 0, dataSummaryInterval: 0,
+            dataSummaryIntervalDescription: ''
+        })
     }
 
     handleThingSpeakID(e) {
@@ -159,30 +186,16 @@ class App extends Component {
     handleNumDays(e) {
         const re = /^[0-9\b]+$/;
         if (e.target.value === '' || re.test(e.target.value)) {
-            // when field is changed, scrap state of older graphs
-            const defaultConfig = {
-                type: 'line',
-                datasets: [{
-                    label: 'ThingSpeak Channel',
-                    //			backgroundColor: color(window.chartColors.red).alpha(0.5).rgbString(),
-                    //		borderColor: window.chartColors.red,
-                    fill: false,
-                    lineTension: 0,
-                    pointRadius: 1,
-                    borderColor: getRandomColor(),
-                    borderWidth: .5,
-                    data: [],
-                }]
-            }
-            // reset graph to line
-            this.lineGraphSelector()
-            this.setState({numDays: e.target.value})
             if (this.state.endDate) {
                 const start = moment(this.state.endDate).subtract(e.target.value, "days");
-                this.setState({startDate: start, config: defaultConfig, dataSetID: 0, dataSummaryInterval: 0,
-                    dataSummaryIntervalDescription: ''})
+                this.setState({
+                    startDate: start, numDays: e.target.value
+                })
             }
         }
+    }
+    handleThingSpeakPeriod(e)  {
+        this.setState({thingSpeakPeriod: e.target.value}, () => {this.refreshClickHandler()})
     }
 
     setDataSummaryInterval30() {
@@ -257,7 +270,7 @@ class App extends Component {
                         this.setState({[fieldName]: undefined})
                     }
                 }
-                this.setState({channelNotVerified: false})
+                this.setState({channelNotVerified: false, showOptions: true, showChannel: true})
                 console.log(this.state)
                 this.forceUpdate()
                 this.refreshClickHandler()
@@ -277,12 +290,14 @@ class App extends Component {
         const dataSetID = parseInt(dID) ? parseInt(dID) : 0
         const APIKEY = this.state.thingSpeakAPIKey ? `&api_key=${this.state.thingSpeakAPIKey}` : ''
         const SUM = this.state.dataSummaryInterval ? `&sum=${this.state.dataSummaryInterval}` : ''
-        const START = this.state.startDate ? `&start=${moment(this.state.startDate).format("YYYY-MM-DD")}` : `&start=${moment(this.state.endDate).subtract(1, "days").format("YYYY-MM-DD")}`
-        const END = this.state.endDate ? `&end=${moment(this.state.endDate).format("YYYY-MM-DD")}` : ''
+        const START = this.state.startDate ? `&start=${moment(this.state.startDate).format("YYYY-MM-DD")}%2000:00:00` : `&start=${moment(this.state.endDate).subtract(1, "days").format("YYYY-MM-DD")}%2000:00:00`
+        const END = this.state.endDate ? `&end=${moment(this.state.endDate).format("YYYY-MM-DD")}%2023:59:59` : ''
         const STATUS = `&status=${true}`
         const METADATA = `&metadata=${true}`
         const LOCATION = `&location=${true}`
-        const thingSpeakQuery = JSON.stringify({url: `https://api.thingspeak.com/channels/${this.state.thingSpeakID}/fields/${this.state.thingSpeakFieldID}.json?${APIKEY}${START}${END}${SUM}${STATUS}${METADATA}${LOCATION}`})
+        const TIMEZONE = `&timezone=${this.state.timeZone}`
+        const PERIOD = `&minutes=${this.state.thingSpeakPeriod}`
+        const thingSpeakQuery = JSON.stringify({url: `https://api.thingspeak.com/channels/${this.state.thingSpeakID}/fields/${this.state.thingSpeakFieldID}.json?${APIKEY}${this.state.thingSpeakPeriod ? PERIOD : START + END}${END}${SUM}${STATUS}${METADATA}${LOCATION}${TIMEZONE}`})
         console.log(thingSpeakQuery)
         fetch('/getJSON', {
             method: 'POST',
@@ -315,7 +330,14 @@ class App extends Component {
                     });
                 }
                 tempConfig.datasets[dataSetID].label = this.state.dataSummaryIntervalDescription ? `${responseJson.map.channel.map.name} ${this.state.dataSummaryIntervalDescription}` : responseJson.map.channel.map.name
-                this.setState({config: tempConfig})
+                const startDate = this.state.startDate ? moment(this.state.startDate).format('MMMM Do YYYY, [12:00:00 am]') : moment(this.state.endDate).subtract(1, 'days').format('MMMM Do YYYY, [12:00:00am]')
+                const xLabel = startDate + " to " + moment(this.state.endDate).format('MMMM Do YYYY, [11:59:59 pm]')
+                this.setState({
+                    config: tempConfig,
+                    key: 'Graph',
+                    thingSpeakFieldName: responseJson.map.channel.map["field".concat(this.state.thingSpeakFieldID)],
+                    xLabel: xLabel
+                })
                 console.log(this.state)
                 if (responseJson.map.channel.map.latitude) {
                     this.setState({latitude: responseJson.map.channel.map.latitude})
@@ -329,13 +351,13 @@ class App extends Component {
                 if (responseJson.map.channel.map.elevation) {
                     this.setState({elevation: responseJson.map.channel.map.elevation})
                 }
-                this.setState({selectedTab: "graph"})
                 this.forceUpdate()
             })
             .catch((error) => {
                 console.error(error);
             }).finally(() => (this.setState({isLoading: false})));
     }
+
 
     componentDidMount() {
         this.updateWindowDimensions();
@@ -346,112 +368,69 @@ class App extends Component {
         window.removeEventListener('resize', this.updateWindowDimensions);
     }
 
+
     updateWindowDimensions() {
-        this.setState({dimensions: {width: window.innerWidth, height: (window.innerHeight - 80)}});
+        if (this.state.virgin) {
+            this.setState({dimensions: {width: window.innerWidth, height: window.innerHeight - 60}, virgin: false})
+        }
+
     }
+
 
     render() {
         const handleDismiss = () => this.setState({showAlert: false});
         const {thingSpeakFieldID} = this.state.thingSpeakFieldID;
+        const {thingSpeakPeriod} = this.state.thingSpeakPeriod;
         const fields = [1, 2, 3, 4, 5, 6, 7, 8];
+        const xLabel = this.state.xLabel
         const optionItems = fields.map((field) => {
             let fieldName = "field_".concat(field)
             if (this.state[fieldName]) {
                 return (<option value={field}>{this.state[fieldName]}</option>)
             }
         })
+        const optionsPeriod = ['', '10', '15', '20', '30', '60', '240', '720', '1440'].map((field) => {
+                return (<option value={field}>{field ? field : 'Select'} minutes</option>)
+        })
         return (
             <Container fluid>
-                <Tabs defaultActiveKey="config" id="tabs" activeKey={this.state.selectedTab}
-                      onSelect={key => this.setState({selectedTab: key})}>
-                    <Tab eventKey="config" title="Configurator">
-                        <Form.Row>
-                            <Col sm={4}>
-                                <Form.Label>ThingSpeak ID</Form.Label>
-                                <Form.Group controlId="validThingSpeak">
-                                    <Form.Control value={this.state.thingSpeakID} onChange={this.handleThingSpeakID}
-                                                  type="text" placeholder="ThingSpeak ID" required/>
-                                    <Form.Control.Feedback type="invalid">
-                                        Please provide a valid ThingSpeakID.
-                                    </Form.Control.Feedback>
-                                </Form.Group>
-
-                                <Form.Group controlId="validThingSpeakFieldID">
-                                    <Form.Control value={this.state.thingSpeakAPIKey}
-                                                  onChange={this.handleThingSpeakAPIKey}
-                                                  type="text" placeholder="Read API Key" required/>
-                                    <Form.Control.Feedback type="invalid">
-                                        Please provide a valid ThingSpeak API key.
-                                    </Form.Control.Feedback>
-                                </Form.Group>
-
-                                <Form.Group controlId="validDate">
-                                    <Form.Label>Select Date: </Form.Label>
-                                    <DatePicker dateFormat="yyyy-MM-dd"
-                                                selected={this.state.endDate}
-                                                onChange={this.handleDatePicker}
-                                    />
-                                </Form.Group>
-
-                                <Form.Group controlId="validNumDays">
-                                    <Form.Control value={this.state.numDays} onChange={this.handleNumDays}
-                                                  type="text"
-                                                  placeholder="Number of Days"
-                                                  isInvalid={this.state.numDays > 31}
-                                                  required/>
-                                    <Form.Control.Feedback type="invalid">
-                                        Please provide a number less than 31.
-                                    </Form.Control.Feedback>
-                                </Form.Group>
-
-                                <Button variant="primary" disabled={this.state.isLoading}
-                                        onClick={!this.state.isLoading ? this.thingSpeakValidatorClickHandler : null}>
-                                    {this.state.isLoading ? <Spinner
-                                        as="span"
-                                        animation="grow"
-                                        size="sm"
-                                        role="status"
-                                        aria-hidden="true"
-                                    /> : 'Load Channel'}
-                                </Button>
-                                <Button variant={!this.state.channelNotVerified ? 'primary' : 'danger'}
-                                        disabled={(this.state.channelNotVerified || this.state.isLoading)}
-                                        onClick={!(this.state.channelNotVerified || this.state.isLoading) ? this.refreshClickHandler : null}>
-                                    {(this.state.isLoading) ? <Spinner
-                                        as="span"
-                                        animation="grow"
-                                        size="sm"
-                                        role="status"
-                                        aria-hidden="true"
-                                    /> : ''}
-                                    {(this.state.channelNotVerified) ? 'Load Channel First' : 'Load Data'}
-                                </Button>
-                            </Col>
-                        </Form.Row>
-                        <Form.Row>
+                <Tabs
+                    id="tabs"
+                    activeKey={this.state.key}
+                    onSelect={key => this.setState({key})}
+                >
+                    <Tab eventKey="Graph" title="Graph">
+                        <br/>
+                        <Form inline>
+                            <Form.Label>ThingSpeak ID: </Form.Label>
+                            <Form.Control className="mr-sm-2" value={this.state.thingSpeakID}
+                                          onChange={this.handleThingSpeakID}
+                                          type="text" placeholder="ThingSpeak ID" required/>
+                            <Form.Control.Feedback type="invalid">
+                                Please provide a valid ThingSpeakID.
+                            </Form.Control.Feedback>
+                            <Button variant="primary" disabled={this.state.isLoading}
+                                    onClick={!this.state.isLoading ? this.thingSpeakValidatorClickHandler : null}>
+                                {this.state.isLoading ? <Spinner
+                                    as="span"
+                                    animation="grow"
+                                    size="sm"
+                                    role="status"
+                                    aria-hidden="true"
+                                /> : 'Load Channel'}
+                            </Button>
+                        </Form>
+                        <Row>
                             {this.state.showAlert &&
                             <Alert variant="danger" onClose={handleDismiss} dismissible>
                                 <Alert.Heading>{this.state.errorHeading}</Alert.Heading>
                                 {this.state.errorBody}
                             </Alert>
                             }
-                        </Form.Row>
+                        </Row>
                         <hr/>
-                        {!this.state.isLoading && this.state.channelDescription &&
-                        <p><h5>Channel Description</h5>{this.state.channelDescription} </p>}
-                        {!this.state.isLoading && this.state.latitude &&
-                        <p><b>Latitude:</b> {this.state.latitude}  </p>}
-                        {!this.state.isLoading && this.state.longitude &&
-                        <p><b>Longitude:</b> {this.state.longitude}</p>}
-                        {!this.state.isLoading && this.state.metadata && <p><b>Metadata:</b> {this.state.metadata}</p>}
-                        {!this.state.isLoading && this.state.elevation &&
-                        <p><b>Longitude:</b> {this.state.elevation}</p>}
-                    </Tab>
-                    <Tab id="graph" eventKey="graph"
-                         style={{height: this.state.dimensions.height, width: this.state.dimensions.width}}
-                         title="Graph">
                         <Row className="justify-content-md-left">
-                            <Col sm={1}>
+                            <Col sm={2}>
                                 <Dropdown>
                                     <Dropdown.Toggle variant="success" id="dropdown-basic">
                                         Options
@@ -468,6 +447,14 @@ class App extends Component {
                                             onClick={!(this.state.channelNotVerified || this.state.isLoading) ? this.lineGraphSelector : null}>Line
                                             Graph</Dropdown.Item>
                                         <Dropdown.Item
+                                            onClick={!(this.state.channelNotVerified || this.state.isLoading || !this.state.lineGraphBoolean) ? this.toggleFill : null}>Toggle
+                                            Fill
+                                        </Dropdown.Item>
+                                        <Dropdown.Item
+                                            onClick={!(this.state.channelNotVerified || this.state.isLoading) ? this.randomColor : null}>Random
+                                            Color
+                                        </Dropdown.Item>
+                                        <Dropdown.Item
                                             onClick={!(this.state.channelNotVerified || this.state.isLoading) ? this.setDataSummaryInterval30 : null}>Summarise
                                             Data (30min)</Dropdown.Item>
                                         <Dropdown.Item
@@ -479,7 +466,7 @@ class App extends Component {
                                     </Dropdown.Menu>
                                 </Dropdown>
                             </Col>
-                            <Col sm={4}>
+                            <Col sm={3}>
                                 <Form.Group controlId="validFieldID">
                                     <Form.Control as="select" value={thingSpeakFieldID}
                                                   onChange={this.handleThingSpeakFieldID}
@@ -489,125 +476,228 @@ class App extends Component {
                                     </Form.Control>
                                 </Form.Group>
                             </Col>
+
                         </Row>
-                        {this.state.lineGraphBoolean &&
-                        <Line
-                            data={this.state.config}
-                            height={this.state.dimensions.height}
-                            width={this.state.dimensions.width}
-                            options={{
-                                maintainAspectRatio: false,
-                                responsive: true,
-                                title: {
-                                    display: true,
-                                    text: `ESP8266 `
-                                },
-                                scales: {
-                                    xAxes: [{
-                                        type: 'time',
-                                        display: true,
-                                        scaleLabel: {
-                                            display: true,
-                                            labelString: "time",
-                                        },
-                                        ticks: {
-                                            major: {
-                                                fontStyle: 'bold',
-                                                fontColor: '#FF0000'
-                                            }
-                                        }
-                                    }],
-                                    yAxes: [{
-                                        display: true,
-                                        scaleLabel: {
-                                            display: true,
-                                            labelString: this.state.thingSpeakFieldName
-                                        }
-                                    }]
-                                }
-                            }}
-                        />
-                        }
-                        {this.state.bubbleGraphBoolean &&
-                        <Bubble
-                            data={this.state.config}
-                            height={this.state.dimensions.height}
-                            width={this.state.dimensions.width}
-                            options={{
-                                maintainAspectRatio: false,
-                                responsive: true,
-                                title: {
-                                    display: true,
-                                    text: `ESP8266 `
-                                },
-                                scales: {
-                                    xAxes: [{
-                                        type: 'time',
-                                        display: true,
-                                        scaleLabel: {
-                                            display: true,
-                                            labelString: "time",
-                                        },
-                                        ticks: {
-                                            major: {
-                                                fontStyle: 'bold',
-                                                fontColor: '#FF0000'
-                                            }
-                                        }
-                                    }],
-                                    yAxes: [{
-                                        display: true,
-                                        scaleLabel: {
-                                            display: true,
-                                            labelString: this.state.thingSpeakFieldName
-                                        }
-                                    }]
-                                }
-                            }}
-                        />
-                        }
-                        {this.state.barGraphBoolean &&
-                        <Bar
-                            data={this.state.config}
-                            height={this.state.dimensions.height}
-                            width={this.state.dimensions.width}
-                            options={{
-                                maintainAspectRatio: false,
-                                responsive: true,
-                                title: {
-                                    display: true,
-                                    text: `ESP8266 `
-                                },
-                                scales: {
-                                    xAxes: [{
-                                        type: 'time',
-                                        display: true,
-                                        scaleLabel: {
-                                            display: true,
-                                            labelString: "time",
-                                        },
-                                        ticks: {
-                                            major: {
-                                                fontStyle: 'bold',
-                                                fontColor: '#FF0000'
-                                            }
-                                        }
-                                    }],
-                                    yAxes: [{
-                                        display: true,
-                                        scaleLabel: {
-                                            display: true,
-                                            labelString: this.state.thingSpeakFieldName
-                                        }
-                                    }]
-                                }
-                            }}
-                        />
-                        }
+                        <Row style={{height: this.state.dimensions.height}}>
+                            <Col ref="chartDiv" sm={12}>
+                                {this.state.lineGraphBoolean &&
+                                <Line
 
+                                    data={this.state.config}
+                                    height={this.state.dimensions.height}
+                                    width={this.state.dimensions.width}
+                                    options={{
+                                        maintainAspectRatio: false,
+                                        responsive: true,
+                                        title: {
+                                            display: true,
+                                            text: `ThingSpeak Data`
+                                        },
+                                        scales: {
+                                            xAxes: [{
+                                                type: 'time',
+                                                display: true,
+                                                scaleLabel: {
+                                                    display: true,
+                                                    labelString: xLabel,
+                                                },
+                                                ticks: {
+                                                    major: {
+                                                        fontStyle: 'bold',
+                                                        fontColor: '#FF0000'
+                                                    }
+                                                }
+                                            }],
+                                            yAxes: [{
+                                                display: true,
+                                                scaleLabel: {
+                                                    display: true,
+                                                    labelString: this.state.thingSpeakFieldName
+                                                }
+                                            }]
+                                        }
+                                    }}
+                                />
+                                }
+                                {this.state.bubbleGraphBoolean &&
+                                <Bubble
+                                    data={this.state.config}
+                                    height={this.state.dimensions.height}
+                                    width={this.state.dimensions.width}
+                                    options={{
+                                        maintainAspectRatio: false,
+                                        responsive: true,
+                                        title: {
+                                            display: true,
+                                            text: `ThingSpeak Data`
+                                        },
+                                        scales: {
+                                            xAxes: [{
+                                                type: 'time',
+                                                display: true,
+                                                scaleLabel: {
+                                                    display: true,
+                                                    labelString: xLabel,
+                                                },
+                                                ticks: {
+                                                    major: {
+                                                        fontStyle: 'bold',
+                                                        fontColor: '#FF0000'
+                                                    }
+                                                }
+                                            }],
+                                            yAxes: [{
+                                                display: true,
+                                                scaleLabel: {
+                                                    display: true,
+                                                    labelString: this.state.thingSpeakFieldName
+                                                }
+                                            }]
+                                        }
+                                    }}
+                                />
+                                }
+                                {this.state.barGraphBoolean &&
+                                <Bar
+                                    data={this.state.config}
+                                    height={this.state.dimensions.height}
+                                    width={this.state.dimensions.width}
+                                    options={{
+                                        maintainAspectRatio: false,
+                                        responsive: true,
+                                        title: {
+                                            display: true,
+                                            text: `ThingSpeak Data`
+                                        },
+                                        scales: {
+                                            xAxes: [{
+                                                type: 'time',
+                                                display: true,
+                                                scaleLabel: {
+                                                    display: true,
+                                                    labelString: xLabel,
+                                                },
+                                                ticks: {
+                                                    major: {
+                                                        fontStyle: 'bold',
+                                                        fontColor: '#FF0000'
+                                                    }
+                                                }
+                                            }],
+                                            yAxes: [{
+                                                display: true,
+                                                scaleLabel: {
+                                                    display: true,
+                                                    labelString: this.state.thingSpeakFieldName
+                                                }
+                                            }]
+                                        }
+                                    }}
+                                />
+                                }
+                            </Col>
+                        </Row>
+                    </Tab>
+                    <Tab eventKey="Config" title="Config">
+                        <br/>
+                        <Row>
+                            <Col sm={4}>
+                                <Col>
+                                    <Form.Label>ThingSpeak ID</Form.Label>
+                                    <Form.Group controlId="validThingSpeak">
+                                        <Form.Control value={this.state.thingSpeakID} onChange={this.handleThingSpeakID}
+                                                      type="text" placeholder="ThingSpeak ID" required/>
+                                        <Form.Control.Feedback type="invalid">
+                                            Please provide a valid ThingSpeakID.
+                                        </Form.Control.Feedback>
+                                    </Form.Group>
 
+                                    <Form.Group controlId="validThingSpeakFieldID">
+                                        <Form.Control value={this.state.thingSpeakAPIKey}
+                                                      onChange={this.handleThingSpeakAPIKey}
+                                                      type="text" placeholder="Read API Key" required/>
+                                        <Form.Control.Feedback type="invalid">
+                                            Please provide a valid ThingSpeak API key.
+                                        </Form.Control.Feedback>
+                                    </Form.Group>
+
+                                    <Form.Group controlId="validDate">
+                                        <Form.Label>Select Date: </Form.Label>
+                                        <DatePicker dateFormat="yyyy-MM-dd"
+                                                    disabled={(this.state.channelNotVerified || this.state.isLoading || this.state.thingSpeakPeriod)}
+                                                    selected={this.state.endDate}
+                                                    onChange={this.handleDatePicker}
+                                        />
+                                    </Form.Group>
+
+                                    <Form.Group controlId="validPeriodSelector">
+                                        <Form.Control as="select" value={thingSpeakPeriod}
+                                                      onChange={this.handleThingSpeakPeriod}
+                                                      type="text" required>
+                                            {optionsPeriod}
+                                        </Form.Control>
+                                    </Form.Group>
+
+                                    <Form.Group controlId="validNumDays">
+                                        <Form.Control value={this.state.numDays} onChange={this.handleNumDays}
+                                                      type="text"
+                                                      disabled={(this.state.channelNotVerified || this.state.isLoading || this.state.thingSpeakPeriod)}
+                                                      placeholder="Number of Days"
+                                                      isInvalid={this.state.numDays > 31}
+                                                      required/>
+                                        <Form.Control.Feedback type="invalid">
+                                            Please provide a number less than 31.
+                                        </Form.Control.Feedback>
+                                    </Form.Group>
+
+                                    <Button variant={!this.state.channelNotVerified ? 'primary' : 'danger'}
+                                            disabled={(this.state.channelNotVerified || this.state.isLoading)}
+                                            onClick={!(this.state.channelNotVerified || this.state.isLoading) ? this.refreshClickHandler : null}>
+                                        {(this.state.isLoading) ? <Spinner
+                                            as="span"
+                                            animation="grow"
+                                            size="sm"
+                                            role="status"
+                                            aria-hidden="true"
+                                        /> : ''}
+                                        {(this.state.channelNotVerified) ? 'Load Channel First' : 'Load Data'}
+                                    </Button>
+                                </Col>
+                            </Col>
+                        </Row>
+                        <Row>
+                            {this.state.showAlert &&
+                            <Alert variant="danger" onClose={handleDismiss} dismissible>
+                                <Alert.Heading>{this.state.errorHeading}</Alert.Heading>
+                                {this.state.errorBody}
+                            </Alert>
+                            }
+                        </Row>
+                    </Tab>
+                    <Tab eventKey="Info" title="Info">
+                        <br/>
+                        <Row>
+                            <Col sm={4}>
+                                <h5>{this.state.channelTitle} </h5>
+                                {this.state.channelDescription}
+                                {!this.state.isLoading && this.state.latitude &&
+                                <p><br/><b>Latitude:</b> {this.state.latitude}  </p>}
+
+                                {!this.state.isLoading && this.state.longitude &&
+                                <p><b>Longitude:</b> {this.state.longitude}</p>}
+
+                                {!this.state.isLoading && this.state.elevation &&
+                                <p><b>Elevation:</b> {this.state.elevation}</p>}
+
+                                {!this.state.isLoading && this.state.metadata &&
+                                <p><b>Metadata:</b> {this.state.metadata}</p>}
+
+                            </Col>
+                        </Row>
                     </Tab>
                 </Tabs>
+
+
             </Container>
         )
     }
