@@ -1,5 +1,4 @@
 import React, {Component} from 'react';
-import ReactDOM from 'react-dom'
 
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -7,8 +6,6 @@ import Container from 'react-bootstrap/Container';
 import Form from 'react-bootstrap/Form';
 import Tab from 'react-bootstrap/Tab'
 import Tabs from 'react-bootstrap/Tabs'
-import NavDropdown from 'react-bootstrap/NavDropdown'
-import FormControl from 'react-bootstrap/FormControl'
 import Alert from 'react-bootstrap/Alert';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
@@ -75,7 +72,8 @@ class App extends Component {
             longitude: '',
             metadata: '',
             elevation: '',
-            virgin: true
+            virgin: true,
+            convertedMSLP: false,
         };
         this.handleDatePicker = this.handleDatePicker.bind(this);
         this.refreshClickHandler = this.refreshClickHandler.bind(this)
@@ -94,6 +92,7 @@ class App extends Component {
         this.setDataSummaryIntervalDaily = this.setDataSummaryIntervalDaily.bind(this)
         this.toggleFill = this.toggleFill.bind(this)
         this.randomColor = this.randomColor.bind(this)
+        this.convertMSLP = this.convertMSLP.bind(this)
     }
 
     barGraphSelector() {
@@ -194,8 +193,11 @@ class App extends Component {
             }
         }
     }
-    handleThingSpeakPeriod(e)  {
-        this.setState({thingSpeakPeriod: e.target.value}, () => {this.refreshClickHandler()})
+
+    handleThingSpeakPeriod(e) {
+        this.setState({thingSpeakPeriod: e.target.value}, () => {
+            this.refreshClickHandler()
+        })
     }
 
     setDataSummaryInterval30() {
@@ -235,6 +237,99 @@ class App extends Component {
         }, () => {
             this.refreshClickHandler(dataset)
         })
+    }
+
+    convertMSLP() {
+        if (!this.state.convertedMSLP) {
+            let currentFieldName = this.state['field_'.concat(this.state.thingSpeakFieldID)]
+            if (!currentFieldName.toUpperCase().match(/PRESSURE/)) {
+                alert("Selected field is not pressure.")
+                return
+            }
+
+            let temperatureFieldID = 0
+            for (let i = 1; i < 9; i++) {
+                let fieldName = 'field_'.concat(i)
+                if (this.state[fieldName].toUpperCase().match(/TEMPERATURE/)) {
+                    temperatureFieldID = i
+                }
+            }
+            if (temperatureFieldID != 0) {
+                this.setState({isLoading: true})
+                const APIKEY = this.state.thingSpeakAPIKey ? `&api_key=${this.state.thingSpeakAPIKey}` : ''
+                const SUM = this.state.dataSummaryInterval ? `&sum=${this.state.dataSummaryInterval}` : ''
+                const START = this.state.startDate ? `&start=${moment(this.state.startDate).format("YYYY-MM-DD")}%2000:00:00` : `&start=${moment(this.state.endDate).subtract(1, "days").format("YYYY-MM-DD")}%2000:00:00`
+                const END = this.state.endDate ? `&end=${moment(this.state.endDate).format("YYYY-MM-DD")}%2023:59:59` : ''
+                const STATUS = `&status=${true}`
+                const METADATA = `&metadata=${true}`
+                const LOCATION = `&location=${true}`
+                const TIMEZONE = `&timezone=${this.state.timeZone}`
+                const PERIOD = `&minutes=${this.state.thingSpeakPeriod}`
+                const thingSpeakQuery = JSON.stringify({url: `https://api.thingspeak.com/channels/${this.state.thingSpeakID}/fields/${temperatureFieldID}.json?${APIKEY}${this.state.thingSpeakPeriod ? PERIOD : START + END}${END}${SUM}${STATUS}${METADATA}${LOCATION}${TIMEZONE}`})
+                console.log(thingSpeakQuery)
+                fetch('/getJSON', {
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: thingSpeakQuery,
+                }).then((response) => response.json())
+                    .then((responseJson) => {
+                            let tempConfig = this.state.config
+                            let dataSetID = tempConfig.datasets.length
+                            tempConfig.datasets[dataSetID] = {
+                                label: 'MSLP',
+                                //			backgroundColor: color(window.chartColors.red).alpha(0.5).rgbString(),
+                                //		borderColor: window.chartColors.red,
+                                fill: false,
+                                lineTension: 0,
+                                pointRadius: 1,
+                                borderColor: getRandomColor(),
+                                borderWidth: .5,
+                                data: [],
+                            }
+                            let hFloat
+                            if (!this.state.elevation) {
+                                let x;
+                                x = prompt("Enter Altitude of Sensor Readings:", "0");
+                                hFloat = parseFloat(x);
+                                if (hFloat < 0 || hFloat > 10000) {
+                                    alert("Error. Enter a valid number.")
+                                }
+                            } else {
+                                hFloat = this.state.elevation
+                            }
+
+                            for (let j = 0,  len = responseJson.map.feeds.myArrayList.length; j < len; j++) {
+                                if (tempConfig.datasets[0].data[j].x.isSame(moment(responseJson.map.feeds.myArrayList[j].map.created_at))) {
+                                    let pSeaLevelFloat = 0.0;
+                                    const tCelFloat = parseFloat(responseJson.map.feeds.myArrayList[j].map[`field${temperatureFieldID}`])
+                                    const pAbsFloat = tempConfig.datasets[0].data[j].y
+                                    let fltP1 = Math.pow((1 - ((0.0065 * hFloat) / (tCelFloat + (0.0065 * hFloat) + 273.15))), -5.257)
+                                    pSeaLevelFloat = pAbsFloat * fltP1
+                                    tempConfig.datasets[dataSetID].data.push({
+                                        x: moment(responseJson.map.feeds.myArrayList[j].map.created_at),
+                                        y: pSeaLevelFloat
+                                    })
+                                } else {
+                                    console.log("Time differs.")
+                                    console.log(`Temp: ${moment(responseJson.map.feeds.myArrayList[j].map.created_at)}`)
+                                    console.log(`Pres: ${tempConfig.datasets[0].data[j].x}`)
+                                }
+                            }
+                        this.setState({config: tempConfig, convertedMSLP: true})
+                        this.forceUpdate()
+                        }
+                    )
+                    .catch((error) => {
+                        console.error(error);
+                    }).finally(() => (this.setState({isLoading: false})));
+
+            }
+        } else {
+            alert("Mean Sea Level Pressure Conversion already performed.")
+        }
     }
 
     thingSpeakValidatorClickHandler() {
@@ -328,7 +423,28 @@ class App extends Component {
                         x: moment(responseJson.map.feeds.myArrayList[i].map.created_at),
                         y: parseFloat(responseJson.map.feeds.myArrayList[i].map[`field${this.state.thingSpeakFieldID}`])
                     });
+
+                    // update values
+                    if (typeof tempConfig.datasets[dataSetID].min === "undefined" || typeof tempConfig.datasets[dataSetID].max === "undefined") {
+                        tempConfig.datasets[dataSetID].min_time = moment(responseJson.map.feeds.myArrayList[i].map.created_at);
+                        tempConfig.datasets[dataSetID].min = parseFloat(responseJson.map.feeds.myArrayList[i].map[`field${this.state.thingSpeakFieldID}`]);
+                        tempConfig.datasets[dataSetID].max_time = moment(responseJson.map.feeds.myArrayList[i].map.created_at);
+                        tempConfig.datasets[dataSetID].max = parseFloat(responseJson.map.feeds.myArrayList[i].map[`field${this.state.thingSpeakFieldID}`]);
+
+                    }
+                    if (parseFloat(responseJson.map.feeds.myArrayList[i].map[`field${this.state.thingSpeakFieldID}`]) < tempConfig.datasets[dataSetID].min) {
+                        tempConfig.datasets[dataSetID].min_time = moment(responseJson.map.feeds.myArrayList[i].map.created_at);
+                        tempConfig.datasets[dataSetID].min = parseFloat(responseJson.map.feeds.myArrayList[i].map[`field${this.state.thingSpeakFieldID}`]);
+                    }
+                    if (parseFloat(responseJson.map.feeds.myArrayList[i].map[`field${this.state.thingSpeakFieldID}`]) > tempConfig.datasets[dataSetID].max) {
+                        tempConfig.datasets[dataSetID].max_time = moment(responseJson.map.feeds.myArrayList[i].map.created_at);
+                        tempConfig.datasets[dataSetID].max = parseFloat(responseJson.map.feeds.myArrayList[i].map[`field${this.state.thingSpeakFieldID}`]);
+                    }
                 }
+                // add latest values
+                tempConfig.datasets[dataSetID].latest_time = moment(responseJson.map.feeds.myArrayList[responseJson.map.feeds.myArrayList.length - 1].map.created_at);
+                tempConfig.datasets[dataSetID].latest = parseFloat(responseJson.map.feeds.myArrayList[responseJson.map.feeds.myArrayList.length - 1].map[`field${this.state.thingSpeakFieldID}`]);
+
                 tempConfig.datasets[dataSetID].label = this.state.dataSummaryIntervalDescription ? `${responseJson.map.channel.map.name} ${this.state.dataSummaryIntervalDescription}` : responseJson.map.channel.map.name
                 const startDate = this.state.startDate ? moment(this.state.startDate).format('MMMM Do YYYY, [12:00:00 am]') : moment(this.state.endDate).subtract(1, 'days').format('MMMM Do YYYY, [12:00:00am]')
                 const xLabel = startDate + " to " + moment(this.state.endDate).format('MMMM Do YYYY, [11:59:59 pm]')
@@ -390,8 +506,29 @@ class App extends Component {
             }
         })
         const optionsPeriod = ['', '10', '15', '20', '30', '60', '240', '720', '1440'].map((field) => {
-                return (<option value={field}>{field ? field : 'Select'} minutes</option>)
+            return (<option value={field}>{field ? field : 'Select'} minutes</option>)
         })
+
+        const minMaxLatest = this.state.config.datasets.map((_, index) => {
+            return (
+                <Row>
+                    <Col>
+                        {(this.state.config.datasets[index].min && this.state.config.datasets[index].min_time) && <div
+                            className="bg-success small">Min: {this.state.config.datasets[index].min}, {this.state.config.datasets[index].min_time.fromNow()}</div>}
+                    </Col>
+                    <Col>
+                        {(this.state.config.datasets[index].max && this.state.config.datasets[index].max_time) && <div
+                            className="bg-danger small">Max: {this.state.config.datasets[index].max}, {this.state.config.datasets[index].max_time.fromNow()}</div>}
+                    </Col>
+                    <Col>
+                        {(this.state.config.datasets[index].latest && this.state.config.datasets[index].latest_time) &&
+                        <div
+                            className="bg-info small">Latest: {this.state.config.datasets[index].latest}, {this.state.config.datasets[index].latest_time.fromNow()}</div>}
+                    </Col>
+                </Row>)
+        })
+
+
         return (
             <Container fluid>
                 <Tabs
@@ -430,7 +567,7 @@ class App extends Component {
                         </Row>
                         <hr/>
                         <Row className="justify-content-md-left">
-                            <Col sm={2}>
+                            <Col>
                                 <Dropdown>
                                     <Dropdown.Toggle variant="success" id="dropdown-basic">
                                         Options
@@ -455,6 +592,9 @@ class App extends Component {
                                             Color
                                         </Dropdown.Item>
                                         <Dropdown.Item
+                                            onClick={!(this.state.channelNotVerified || this.state.isLoading) ? this.convertMSLP : null}>Convert
+                                            to Mean Sea Level Pressure</Dropdown.Item>
+                                        <Dropdown.Item
                                             onClick={!(this.state.channelNotVerified || this.state.isLoading) ? this.setDataSummaryInterval30 : null}>Summarise
                                             Data (30min)</Dropdown.Item>
                                         <Dropdown.Item
@@ -466,7 +606,7 @@ class App extends Component {
                                     </Dropdown.Menu>
                                 </Dropdown>
                             </Col>
-                            <Col sm={3}>
+                            <Col>
                                 <Form.Group controlId="validFieldID">
                                     <Form.Control as="select" value={thingSpeakFieldID}
                                                   onChange={this.handleThingSpeakFieldID}
@@ -476,7 +616,6 @@ class App extends Component {
                                     </Form.Control>
                                 </Form.Group>
                             </Col>
-
                         </Row>
                         <Row style={{height: this.state.dimensions.height}}>
                             <Col ref="chartDiv" sm={12}>
@@ -597,6 +736,7 @@ class App extends Component {
                                 }
                             </Col>
                         </Row>
+                        {minMaxLatest}
                     </Tab>
                     <Tab eventKey="Config" title="Config">
                         <br/>
@@ -677,7 +817,7 @@ class App extends Component {
                     <Tab eventKey="Info" title="Info">
                         <br/>
                         <Row>
-                            <Col sm={4}>
+                            <Col>
                                 <h5>{this.state.channelTitle} </h5>
                                 {this.state.channelDescription}
                                 {!this.state.isLoading && this.state.latitude &&
@@ -696,17 +836,15 @@ class App extends Component {
                         </Row>
                     </Tab>
                 </Tabs>
-
-
             </Container>
         )
     }
 }
 
 function getRandomColor() {
-    var letters = '0123456789ABCDEF';
-    var color = '#';
-    for (var i = 0; i < 6; i++) {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
         color += letters[Math.floor(Math.random() * 16)];
     }
     return color;
