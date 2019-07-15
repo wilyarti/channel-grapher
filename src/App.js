@@ -19,6 +19,8 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import 'react-bootstrap-timezone-picker/dist/react-bootstrap-timezone-picker.min.css';
 import moment from 'moment-timezone';
+import TimezonePicker from 'react-bootstrap-timezone-picker';
+import 'react-bootstrap-timezone-picker/dist/react-bootstrap-timezone-picker.min.css';
 
 
 class App extends Component {
@@ -75,7 +77,8 @@ class App extends Component {
             virgin: true,
             convertedMSLP: false,
         };
-        this.handleDatePicker = this.handleDatePicker.bind(this);
+        this.handleDatePicker = this.handleDatePicker.bind(this)
+        this.handleTimeZone = this.handleTimeZone.bind(this)
         this.refreshClickHandler = this.refreshClickHandler.bind(this)
         this.thingSpeakValidatorClickHandler = this.thingSpeakValidatorClickHandler.bind(this)
         this.handleThingSpeakID = this.handleThingSpeakID.bind(this)
@@ -83,7 +86,7 @@ class App extends Component {
         this.handleThingSpeakAPIKey = this.handleThingSpeakAPIKey.bind(this)
         this.handleThingSpeakPeriod = this.handleThingSpeakPeriod.bind(this)
         this.handleNumDays = this.handleNumDays.bind(this)
-        this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
+        this.updateWindowDimensions = this.updateWindowDimensions.bind(this)
         this.barGraphSelector = this.barGraphSelector.bind(this)
         this.bubbleGraphSelector = this.bubbleGraphSelector.bind(this)
         this.lineGraphSelector = this.lineGraphSelector.bind(this)
@@ -147,6 +150,9 @@ class App extends Component {
         })
     }
 
+    handleTimeZone(timeZone) {
+        this.setState({timeZone}, () => { this.refreshClickHandler()})
+    }
     handleThingSpeakID(e) {
         this.setState({channelNotVerified: true, thingSpeakID: e.target.value});
     }
@@ -379,6 +385,8 @@ class App extends Component {
     }
 
     refreshClickHandler(dID) {
+        // update the timezone to match the new one
+        moment.tz.setDefault(this.state.timeZone)
         this.setState({isLoading: true})
         console.log(dID)
         const dataSetID = parseInt(dID) ? parseInt(dID) : 0
@@ -484,6 +492,9 @@ class App extends Component {
     }
 
     getCookies() {
+        if (!cookies) {
+            return
+        }
         let cookies = JSON.parse(document.cookie)
         if (cookies.thingSpeakID) {
             this.setState({thingSpeakID: cookies.thingSpeakID})
@@ -788,9 +799,18 @@ class App extends Component {
                                                     onChange={this.handleDatePicker}
                                         />
                                     </Form.Group>
-
+                                    <Form.Group>
+                                         <TimezonePicker
+                                            absolute      = {false}
+                                            disabled={(this.state.channelNotVerified || this.state.isLoading)}
+                                            defaultValue  = {this.state.timeZone}
+                                            placeholder   = "Select timezone..."
+                                            onChange      = {this.handleTimeZone}
+                                        />
+                                    </Form.Group>
                                     <Form.Group controlId="validPeriodSelector">
                                         <Form.Control as="select" value={thingSpeakPeriod}
+                                                      disabled={(this.state.channelNotVerified || this.state.isLoading)}
                                                       onChange={this.handleThingSpeakPeriod}
                                                       type="text" required>
                                             {optionsPeriod}
