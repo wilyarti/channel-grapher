@@ -51,11 +51,11 @@ class App extends Component {
             channelHeading: '',
             channelBody: '',
             thingSpeakID: '645847',
+            thingSpeakAPIKey: '',
             thingSpeakFieldID: '1',
             thingSpeakFieldName: 'sensor',
             thingSpeakPeriod: '',
             xLabel: 'time',
-            thingSpeakAPIKey: '',
             startDate: '',
             endDate: new Date(),
             channelTitle: '',
@@ -170,7 +170,7 @@ class App extends Component {
         // reset graph to line
         this.lineGraphSelector()
         this.setState({
-            thingSpeakFieldID: e.target.value, config: defaultConfig, dataSetID: 0, dataSummaryInterval: 0,
+            thingSpeakFieldID: e.target.value, convertedMSLP: false, config: defaultConfig, dataSetID: 0, dataSummaryInterval: 0,
             dataSummaryIntervalDescription: '',
         }, () => {
             this.refreshClickHandler();
@@ -319,7 +319,6 @@ class App extends Component {
                                 }
                             }
                         this.setState({config: tempConfig, convertedMSLP: true})
-                        this.forceUpdate()
                         }
                     )
                     .catch((error) => {
@@ -367,7 +366,7 @@ class App extends Component {
                 }
                 this.setState({channelNotVerified: false, showOptions: true, showChannel: true})
                 console.log(this.state)
-                this.forceUpdate()
+                this.setCookies()
                 this.refreshClickHandler()
             })
             .catch((error) => {
@@ -467,17 +466,37 @@ class App extends Component {
                 if (responseJson.map.channel.map.elevation) {
                     this.setState({elevation: responseJson.map.channel.map.elevation})
                 }
-                this.forceUpdate()
             })
             .catch((error) => {
                 console.error(error);
             }).finally(() => (this.setState({isLoading: false})));
     }
 
+    setCookies () {
+        let cookies = {}
+        if (this.state.thingSpeakID) {
+            cookies.thingSpeakID = this.state.thingSpeakID
+        }
+        if (this.state.thingSpeakAPIKey) {
+            cookies.thingSpeakAPIKey = this.state.thingSpeakAPIKey
+        }
+        document.cookie = JSON.stringify(cookies)
+    }
+
+    getCookies() {
+        let cookies = JSON.parse(document.cookie)
+        if (cookies.thingSpeakID) {
+            this.setState({thingSpeakID: cookies.thingSpeakID})
+        }
+        if (cookies.thingSpeakAPIKey) {
+            this.setState({thingSpeakAPIKey: cookies.thingSpeakAPIKey})
+        }
+    }
 
     componentDidMount() {
         this.updateWindowDimensions();
         window.addEventListener('resize', this.updateWindowDimensions);
+        this.state.virgin ? this.getCookies() : console.log("Not loading cookies.")
     }
 
     componentWillUnmount() {
@@ -506,12 +525,12 @@ class App extends Component {
             }
         })
         const optionsPeriod = ['', '10', '15', '20', '30', '60', '240', '720', '1440'].map((field) => {
-            return (<option value={field}>{field ? field : 'Select'} minutes</option>)
+            return (<option key={field} value={field}>{field ? field : 'Select'} minutes</option>)
         })
 
         const minMaxLatest = this.state.config.datasets.map((_, index) => {
             return (
-                <Row>
+                <Row key={index}>
                     <Col>
                         {(this.state.config.datasets[index].min && this.state.config.datasets[index].min_time) && <div
                             className="bg-success small">Min: {this.state.config.datasets[index].min}, {this.state.config.datasets[index].min_time.fromNow()}</div>}
@@ -619,7 +638,7 @@ class App extends Component {
                         </Row>
                         <Row style={{height: this.state.dimensions.height}}>
                             <Col ref="chartDiv" sm={12}>
-                                {this.state.lineGraphBoolean &&
+                                {this.state.lineGraphBoolean && !(this.state.channelNotVerified) &&
                                 <Line
 
                                     data={this.state.config}
@@ -658,7 +677,7 @@ class App extends Component {
                                     }}
                                 />
                                 }
-                                {this.state.bubbleGraphBoolean &&
+                                {this.state.bubbleGraphBoolean && !(this.state.channelNotVerified) &&
                                 <Bubble
                                     data={this.state.config}
                                     height={this.state.dimensions.height}
@@ -696,7 +715,7 @@ class App extends Component {
                                     }}
                                 />
                                 }
-                                {this.state.barGraphBoolean &&
+                                {this.state.barGraphBoolean && !(this.state.channelNotVerified ) &&
                                 <Bar
                                     data={this.state.config}
                                     height={this.state.dimensions.height}
