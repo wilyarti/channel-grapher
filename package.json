@@ -15,7 +15,9 @@
     "react-chartjs-2": "^2.7.6",
     "react-datepicker": "^2.8.0",
     "react-dom": "^16.8.6",
+    "react-feather": "^2.0.3",
     "react-moment": "^0.9.2",
+    "react-native-vector-icons": "^6.6.0",
     "react-scripts": "0.9.5",
     "react-timezone-picker": "^1.0.8"
   },

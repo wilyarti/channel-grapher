@@ -21,7 +21,7 @@ import 'react-bootstrap-timezone-picker/dist/react-bootstrap-timezone-picker.min
 import moment from 'moment-timezone';
 import TimezonePicker from 'react-bootstrap-timezone-picker';
 import 'react-bootstrap-timezone-picker/dist/react-bootstrap-timezone-picker.min.css';
-
+import {Settings, BarChart2, Info, Sliders, TrendingUp, TrendingDown, Activity} from 'react-feather';
 
 class App extends Component {
     constructor(props) {
@@ -31,8 +31,6 @@ class App extends Component {
                 type: 'line',
                 datasets: [{
                     label: 'ThingSpeak Channel',
-                    //			backgroundColor: color(window.chartColors.red).alpha(0.5).rgbString(),
-                    //		borderColor: window.chartColors.red,
                     fill: false,
                     lineTension: 0,
                     pointRadius: 1,
@@ -76,6 +74,7 @@ class App extends Component {
             elevation: '',
             virgin: true,
             convertedMSLP: false,
+            key: 'Config'
         };
         this.handleDatePicker = this.handleDatePicker.bind(this)
         this.handleTimeZone = this.handleTimeZone.bind(this)
@@ -151,8 +150,11 @@ class App extends Component {
     }
 
     handleTimeZone(timeZone) {
-        this.setState({timeZone}, () => { this.refreshClickHandler()})
+        this.setState({timeZone}, () => {
+            this.refreshClickHandler()
+        })
     }
+
     handleThingSpeakID(e) {
         this.setState({channelNotVerified: true, thingSpeakID: e.target.value});
     }
@@ -176,7 +178,11 @@ class App extends Component {
         // reset graph to line
         this.lineGraphSelector()
         this.setState({
-            thingSpeakFieldID: e.target.value, convertedMSLP: false, config: defaultConfig, dataSetID: 0, dataSummaryInterval: 0,
+            thingSpeakFieldID: e.target.value,
+            convertedMSLP: false,
+            config: defaultConfig,
+            dataSetID: 0,
+            dataSummaryInterval: 0,
             dataSummaryIntervalDescription: '',
         }, () => {
             this.refreshClickHandler();
@@ -307,7 +313,7 @@ class App extends Component {
                                 hFloat = this.state.elevation
                             }
 
-                            for (let j = 0,  len = responseJson.map.feeds.myArrayList.length; j < len; j++) {
+                            for (let j = 0, len = responseJson.map.feeds.myArrayList.length; j < len; j++) {
                                 if (tempConfig.datasets[0].data[j].x.isSame(moment(responseJson.map.feeds.myArrayList[j].map.created_at))) {
                                     let pSeaLevelFloat = 0.0;
                                     const tCelFloat = parseFloat(responseJson.map.feeds.myArrayList[j].map[`field${temperatureFieldID}`])
@@ -324,7 +330,7 @@ class App extends Component {
                                     console.log(`Pres: ${tempConfig.datasets[0].data[j].x}`)
                                 }
                             }
-                        this.setState({config: tempConfig, convertedMSLP: true})
+                            this.setState({config: tempConfig, convertedMSLP: true})
                         }
                     )
                     .catch((error) => {
@@ -439,11 +445,11 @@ class App extends Component {
                         tempConfig.datasets[dataSetID].max = parseFloat(responseJson.map.feeds.myArrayList[i].map[`field${this.state.thingSpeakFieldID}`]);
 
                     }
-                    if (parseFloat(responseJson.map.feeds.myArrayList[i].map[`field${this.state.thingSpeakFieldID}`]) < tempConfig.datasets[dataSetID].min) {
+                    if (parseFloat(responseJson.map.feeds.myArrayList[i].map[`field${this.state.thingSpeakFieldID}`]) <= tempConfig.datasets[dataSetID].min) {
                         tempConfig.datasets[dataSetID].min_time = moment(responseJson.map.feeds.myArrayList[i].map.created_at);
                         tempConfig.datasets[dataSetID].min = parseFloat(responseJson.map.feeds.myArrayList[i].map[`field${this.state.thingSpeakFieldID}`]);
                     }
-                    if (parseFloat(responseJson.map.feeds.myArrayList[i].map[`field${this.state.thingSpeakFieldID}`]) > tempConfig.datasets[dataSetID].max) {
+                    if (parseFloat(responseJson.map.feeds.myArrayList[i].map[`field${this.state.thingSpeakFieldID}`]) >= tempConfig.datasets[dataSetID].max) {
                         tempConfig.datasets[dataSetID].max_time = moment(responseJson.map.feeds.myArrayList[i].map.created_at);
                         tempConfig.datasets[dataSetID].max = parseFloat(responseJson.map.feeds.myArrayList[i].map[`field${this.state.thingSpeakFieldID}`]);
                     }
@@ -461,7 +467,6 @@ class App extends Component {
                     thingSpeakFieldName: responseJson.map.channel.map["field".concat(this.state.thingSpeakFieldID)],
                     xLabel: xLabel
                 })
-                console.log(this.state)
                 if (responseJson.map.channel.map.latitude) {
                     this.setState({latitude: responseJson.map.channel.map.latitude})
                 }
@@ -474,13 +479,19 @@ class App extends Component {
                 if (responseJson.map.channel.map.elevation) {
                     this.setState({elevation: responseJson.map.channel.map.elevation})
                 }
+                console.log(this.state)
+                console.log(this.refs['chart']);
+                this.refs.minMaxBox.scrollIntoView({block: 'end', behavior: 'smooth'});
             })
             .catch((error) => {
                 console.error(error);
-            }).finally(() => (this.setState({isLoading: false})));
+            }).finally(() => {
+                this.setState({isLoading: false});
+            }
+        );
     }
 
-    setCookies () {
+    setCookies() {
         let cookies = {}
         if (this.state.thingSpeakID) {
             cookies.thingSpeakID = this.state.thingSpeakID
@@ -492,7 +503,7 @@ class App extends Component {
     }
 
     getCookies() {
-        if (!cookies) {
+        if (!document.cookie) {
             return
         }
         let cookies = JSON.parse(document.cookie)
@@ -517,7 +528,7 @@ class App extends Component {
 
     updateWindowDimensions() {
         if (this.state.virgin) {
-            this.setState({dimensions: {width: window.innerWidth, height: window.innerHeight - 60}, virgin: false})
+            this.setState({dimensions: {width: window.innerWidth, height: window.innerHeight - 100}, virgin: false})
         }
 
     }
@@ -541,66 +552,50 @@ class App extends Component {
 
         const minMaxLatest = this.state.config.datasets.map((_, index) => {
             return (
-                <Row key={index}>
-                    <Col>
-                        {(this.state.config.datasets[index].min && this.state.config.datasets[index].min_time) && <div
-                            className="bg-success small">Min: {this.state.config.datasets[index].min}, {this.state.config.datasets[index].min_time.fromNow()}</div>}
+                <Row  key={index}>
+                    <Col xs={4} >
+                        {((typeof this.state.config.datasets[index].min !== "undefined") && this.state.config.datasets[index].min_time) &&
+                        <div class="bg-danger">
+                            <span><TrendingDown/></span> {this.state.config.datasets[index].min.toFixed(2)}, {this.state.config.datasets[index].min_time.fromNow()}
+                        </div>}
                     </Col>
-                    <Col>
-                        {(this.state.config.datasets[index].max && this.state.config.datasets[index].max_time) && <div
-                            className="bg-danger small">Max: {this.state.config.datasets[index].max}, {this.state.config.datasets[index].max_time.fromNow()}</div>}
+                    <Col xs={4}  >
+                        {((typeof this.state.config.datasets[index].max !== "undefined") && this.state.config.datasets[index].max_time) &&
+                        <div class="bg-success">
+                            <span><TrendingUp/></span> {this.state.config.datasets[index].max.toFixed(2)}, {this.state.config.datasets[index].max_time.fromNow()}
+                        </div>}
                     </Col>
-                    <Col>
-                        {(this.state.config.datasets[index].latest && this.state.config.datasets[index].latest_time) &&
-                        <div
-                            className="bg-info small">Latest: {this.state.config.datasets[index].latest}, {this.state.config.datasets[index].latest_time.fromNow()}</div>}
+                    <Col xs={4}  >
+                        {((typeof this.state.config.datasets[index].latest !== "undefined") && this.state.config.datasets[index].latest_time) &&
+                        <div class="bg-info">
+                            <span><Activity/></span> {this.state.config.datasets[index].latest.toFixed(2)}, {this.state.config.datasets[index].latest_time.fromNow()}
+                        </div>}
                     </Col>
                 </Row>)
         })
-
 
         return (
             <Container fluid>
                 <Tabs
                     id="tabs"
                     activeKey={this.state.key}
+                    size="sm"
                     onSelect={key => this.setState({key})}
                 >
-                    <Tab eventKey="Graph" title="Graph">
+                    <Tab eventKey="Graph" disabled={(this.state.channelNotVerified || this.state.isLoading)}
+                         title={<span> <BarChart2/> {(this.state.isLoading && !this.state.channelNotVerified) ? <Spinner
+                             as="span"
+                             animation="grow"
+                             size="sm"
+                             role="status"
+                             aria-hidden="true"
+                         /> : ''}</span>}>
                         <br/>
-                        <Form inline>
-                            <Form.Label>ThingSpeak ID: </Form.Label>
-                            <Form.Control className="mr-sm-2" value={this.state.thingSpeakID}
-                                          onChange={this.handleThingSpeakID}
-                                          type="text" placeholder="ThingSpeak ID" required/>
-                            <Form.Control.Feedback type="invalid">
-                                Please provide a valid ThingSpeakID.
-                            </Form.Control.Feedback>
-                            <Button variant="primary" disabled={this.state.isLoading}
-                                    onClick={!this.state.isLoading ? this.thingSpeakValidatorClickHandler : null}>
-                                {this.state.isLoading ? <Spinner
-                                    as="span"
-                                    animation="grow"
-                                    size="sm"
-                                    role="status"
-                                    aria-hidden="true"
-                                /> : 'Load Channel'}
-                            </Button>
-                        </Form>
-                        <Row>
-                            {this.state.showAlert &&
-                            <Alert variant="danger" onClose={handleDismiss} dismissible>
-                                <Alert.Heading>{this.state.errorHeading}</Alert.Heading>
-                                {this.state.errorBody}
-                            </Alert>
-                            }
-                        </Row>
-                        <hr/>
                         <Row className="justify-content-md-left">
                             <Col>
                                 <Dropdown>
                                     <Dropdown.Toggle variant="success" id="dropdown-basic">
-                                        Options
+                                        {<span> <Sliders/> </span>}
                                     </Dropdown.Toggle>
 
                                     <Dropdown.Menu>
@@ -651,7 +646,7 @@ class App extends Component {
                             <Col ref="chartDiv" sm={12}>
                                 {this.state.lineGraphBoolean && !(this.state.channelNotVerified) &&
                                 <Line
-
+                                    ref="chart"
                                     data={this.state.config}
                                     height={this.state.dimensions.height}
                                     width={this.state.dimensions.width}
@@ -726,7 +721,7 @@ class App extends Component {
                                     }}
                                 />
                                 }
-                                {this.state.barGraphBoolean && !(this.state.channelNotVerified ) &&
+                                {this.state.barGraphBoolean && !(this.state.channelNotVerified) &&
                                 <Bar
                                     data={this.state.config}
                                     height={this.state.dimensions.height}
@@ -766,9 +761,26 @@ class App extends Component {
                                 }
                             </Col>
                         </Row>
-                        {minMaxLatest}
+                        <div ref="minMaxBox">
+                            {minMaxLatest}
+                        </div>
                     </Tab>
-                    <Tab eventKey="Config" title="Config">
+                    <Tab eventKey="Config"
+                         title={<span><Settings/> {(this.state.isLoading && this.state.channelNotVerified) ? <Spinner
+                             as="span"
+                             animation="grow"
+                             size="sm"
+                             role="status"
+                             aria-hidden="true"
+                         /> : ''}</span>}>
+                        <Row>
+                            {this.state.showAlert &&
+                            <Alert variant="danger" onClose={handleDismiss} dismissible>
+                                <Alert.Heading>{this.state.errorHeading}</Alert.Heading>
+                                {this.state.errorBody}
+                            </Alert>
+                            }
+                        </Row>
                         <br/>
                         <Row>
                             <Col sm={4}>
@@ -790,70 +802,76 @@ class App extends Component {
                                             Please provide a valid ThingSpeak API key.
                                         </Form.Control.Feedback>
                                     </Form.Group>
-
-                                    <Form.Group controlId="validDate">
-                                        <Form.Label>Select Date: </Form.Label>
-                                        <DatePicker dateFormat="yyyy-MM-dd"
-                                                    disabled={(this.state.channelNotVerified || this.state.isLoading || this.state.thingSpeakPeriod)}
-                                                    selected={this.state.endDate}
-                                                    onChange={this.handleDatePicker}
-                                        />
-                                    </Form.Group>
-                                    <Form.Group>
-                                         <TimezonePicker
-                                            absolute      = {false}
-                                            disabled={(this.state.channelNotVerified || this.state.isLoading)}
-                                            defaultValue  = {this.state.timeZone}
-                                            placeholder   = "Select timezone..."
-                                            onChange      = {this.handleTimeZone}
-                                        />
-                                    </Form.Group>
-                                    <Form.Group controlId="validPeriodSelector">
-                                        <Form.Control as="select" value={thingSpeakPeriod}
-                                                      disabled={(this.state.channelNotVerified || this.state.isLoading)}
-                                                      onChange={this.handleThingSpeakPeriod}
-                                                      type="text" required>
-                                            {optionsPeriod}
-                                        </Form.Control>
-                                    </Form.Group>
-
-                                    <Form.Group controlId="validNumDays">
-                                        <Form.Control value={this.state.numDays} onChange={this.handleNumDays}
-                                                      type="text"
-                                                      disabled={(this.state.channelNotVerified || this.state.isLoading || this.state.thingSpeakPeriod)}
-                                                      placeholder="Number of Days"
-                                                      isInvalid={this.state.numDays > 31}
-                                                      required/>
-                                        <Form.Control.Feedback type="invalid">
-                                            Please provide a number less than 31.
-                                        </Form.Control.Feedback>
-                                    </Form.Group>
-
-                                    <Button variant={!this.state.channelNotVerified ? 'primary' : 'danger'}
-                                            disabled={(this.state.channelNotVerified || this.state.isLoading)}
-                                            onClick={!(this.state.channelNotVerified || this.state.isLoading) ? this.refreshClickHandler : null}>
-                                        {(this.state.isLoading) ? <Spinner
+                                    <Button variant="primary" disabled={this.state.isLoading}
+                                            onClick={!this.state.isLoading ? this.thingSpeakValidatorClickHandler : null}>
+                                        {this.state.isLoading ? <Spinner
                                             as="span"
                                             animation="grow"
                                             size="sm"
                                             role="status"
                                             aria-hidden="true"
-                                        /> : ''}
-                                        {(this.state.channelNotVerified) ? 'Load Channel First' : 'Load Data'}
+                                        /> : 'Load Channel'}
                                     </Button>
+                                    <hr/>
+
+                                    {!this.state.channelNotVerified &&
+                                    <div>
+                                        <Form.Group controlId="validDate">
+                                            <Form.Label>Select Date: </Form.Label>
+                                            <DatePicker dateFormat="yyyy-MM-dd"
+                                                        disabled={(this.state.channelNotVerified || this.state.isLoading || this.state.thingSpeakPeriod)}
+                                                        selected={this.state.endDate}
+                                                        onChange={this.handleDatePicker}
+                                            />
+                                        </Form.Group>
+                                        <Form.Group>
+                                            <TimezonePicker
+                                                absolute={false}
+                                                disabled={(this.state.channelNotVerified || this.state.isLoading)}
+                                                defaultValue={this.state.timeZone}
+                                                placeholder="Select timezone..."
+                                                onChange={this.handleTimeZone}
+                                            />
+                                        </Form.Group>
+                                        <Form.Group controlId="validPeriodSelector">
+                                            <Form.Control as="select" value={thingSpeakPeriod}
+                                                          disabled={(this.state.channelNotVerified || this.state.isLoading)}
+                                                          onChange={this.handleThingSpeakPeriod}
+                                                          type="text" required>
+                                                {optionsPeriod}
+                                            </Form.Control>
+                                        </Form.Group>
+                                        <Form.Group controlId="validNumDays">
+                                            <Form.Control value={this.state.numDays} onChange={this.handleNumDays}
+                                                          type="text"
+                                                          disabled={(this.state.channelNotVerified || this.state.isLoading || this.state.thingSpeakPeriod)}
+                                                          placeholder="Number of Days"
+                                                          isInvalid={this.state.numDays > 31}
+                                                          required/>
+                                            <Form.Control.Feedback type="invalid">
+                                                Please provide a number less than 31.
+                                            </Form.Control.Feedback>
+                                        </Form.Group>
+                                        <Button variant={!this.state.channelNotVerified ? 'primary' : 'danger'}
+                                                disabled={(this.state.channelNotVerified || this.state.isLoading)}
+                                                onClick={!(this.state.channelNotVerified || this.state.isLoading) ? this.refreshClickHandler : null}>
+                                            {(this.state.isLoading) ? <Spinner
+                                                as="span"
+                                                animation="grow"
+                                                size="sm"
+                                                role="status"
+                                                aria-hidden="true"
+                                            /> : ''}
+                                            {(this.state.channelNotVerified) ? 'Load Channel First' : 'Load Data'}
+                                        </Button>
+                                    </div>}
                                 </Col>
                             </Col>
                         </Row>
-                        <Row>
-                            {this.state.showAlert &&
-                            <Alert variant="danger" onClose={handleDismiss} dismissible>
-                                <Alert.Heading>{this.state.errorHeading}</Alert.Heading>
-                                {this.state.errorBody}
-                            </Alert>
-                            }
-                        </Row>
                     </Tab>
-                    <Tab eventKey="Info" title="Info">
+                    <Tab eventKey="Info"
+                         disabled={(this.state.channelNotVerified || this.state.isLoading)}
+                         title={<span> <Info/> </span>}>
                         <br/>
                         <Row>
                             <Col>
