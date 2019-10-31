@@ -506,12 +506,16 @@ class App extends Component {
         if (!document.cookie) {
             return
         }
-        let cookies = JSON.parse(document.cookie)
-        if (cookies.thingSpeakID) {
-            this.setState({thingSpeakID: cookies.thingSpeakID})
-        }
-        if (cookies.thingSpeakAPIKey) {
-            this.setState({thingSpeakAPIKey: cookies.thingSpeakAPIKey})
+        try {
+            let cookies = JSON.parse(document.cookie)
+            if (cookies.thingSpeakID) {
+                this.setState({thingSpeakID: cookies.thingSpeakID})
+            }
+            if (cookies.thingSpeakAPIKey) {
+                this.setState({thingSpeakAPIKey: cookies.thingSpeakAPIKey})
+            }
+        } catch(e) {
+            console.log(e); // error in the above string (in this case, yes)!
         }
     }
 
