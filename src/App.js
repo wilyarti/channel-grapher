@@ -76,7 +76,8 @@ class App extends Component {
             virgin: true,
             convertedMSLP: false,
             key: 'Config',
-            palette: distinctColors({count: 56})
+            palette: distinctColors({count: 56}),
+            favoriteColor: ''
         };
         this.handleDatePicker = this.handleDatePicker.bind(this)
         this.handleTimeZone = this.handleTimeZone.bind(this)
@@ -119,10 +120,12 @@ class App extends Component {
 
     randomColor() {
         let tempConfig = this.state.config
+        let favoriteColor
         for (let i = 0; i < tempConfig.datasets.length; i++) {
-            tempConfig.datasets[i].borderColor = this.state.palette[this.state.config.datasets.length + Math.floor(Math.random() * 10)].hex();
+            favoriteColor = this.state.palette[this.state.config.datasets.length + Math.floor(Math.random() * 10)].hex();
+            tempConfig.datasets[i].borderColor = favoriteColor;
         }
-        this.setState({config: tempConfig})
+        this.setState({config: tempConfig, favoriteColor})
     }
 
     handleDatePicker(date) {
@@ -291,7 +294,7 @@ class App extends Component {
                                 fill: true,
                                 lineTension: 0,
                                 pointRadius: 1,
-                                borderColor: this.state.palette[this.state.config.datasets.length + 1].hex(),
+                                borderColor: this.state.favoriteColor ? this.state.favoriteColor : this.state.palette[this.state.config.datasets.length + 1].hex(),
                                 data: [],
                             }
                             let hFloat
@@ -418,7 +421,7 @@ class App extends Component {
                     fill: true,
                     lineTension: 0,
                     pointRadius: 1.5,
-                    borderColor: this.state.palette[this.state.config.datasets.length + 1].hex(),
+                    borderColor: this.state.favoriteColor ? this.state.favoriteColor : this.state.palette[this.state.config.datasets.length + 1].hex(),
                     borderWidth: 2,
                     data: [],
                 };
