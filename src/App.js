@@ -23,6 +23,8 @@ import TimezonePicker from 'react-bootstrap-timezone-picker';
 import 'react-bootstrap-timezone-picker/dist/react-bootstrap-timezone-picker.min.css';
 import {Settings, BarChart2, Info, Sliders, TrendingUp, TrendingDown, Activity} from 'react-feather';
 
+const distinctColors = require('distinct-colors')
+
 class App extends Component {
     constructor(props) {
         super(props);
@@ -31,11 +33,10 @@ class App extends Component {
                 type: 'line',
                 datasets: [{
                     label: 'ThingSpeak Channel',
-                    fill: false,
+                    fill: true,
                     lineTension: 0,
                     pointRadius: 1,
-                    borderColor: getRandomColor(),
-                    borderWidth: .5,
+                    borderColor: '#FFFFFF',
                     data: [],
                 }]
             },
@@ -74,7 +75,8 @@ class App extends Component {
             elevation: '',
             virgin: true,
             convertedMSLP: false,
-            key: 'Config'
+            key: 'Config',
+            palette: distinctColors({count: 56})
         };
         this.handleDatePicker = this.handleDatePicker.bind(this)
         this.handleTimeZone = this.handleTimeZone.bind(this)
@@ -118,7 +120,7 @@ class App extends Component {
     randomColor() {
         let tempConfig = this.state.config
         for (let i = 0; i < tempConfig.datasets.length; i++) {
-            tempConfig.datasets[i].borderColor = getRandomColor()
+            tempConfig.datasets[i].borderColor = this.state.palette[this.state.config.datasets.length + Math.floor(Math.random() * 10)].hex();
         }
         this.setState({config: tempConfig})
     }
@@ -129,13 +131,10 @@ class App extends Component {
             type: 'line',
             datasets: [{
                 label: 'ThingSpeak Channel',
-                //			backgroundColor: color(window.chartColors.red).alpha(0.5).rgbString(),
-                //		borderColor: window.chartColors.red,
-                fill: false,
+                fill: true,
                 lineTension: 0,
                 pointRadius: 1,
-                borderColor: getRandomColor(),
-                borderWidth: .5,
+                borderColor: this.state.palette[this.state.config.datasets.length + 1].hex(),
                 data: [],
             }]
         }
@@ -165,13 +164,10 @@ class App extends Component {
             type: 'line',
             datasets: [{
                 label: 'ThingSpeak Channel',
-                //			backgroundColor: color(window.chartColors.red).alpha(0.5).rgbString(),
-                //		borderColor: window.chartColors.red,
-                fill: false,
+                fill: true,
                 lineTension: 0,
                 pointRadius: 1,
-                borderColor: getRandomColor(),
-                borderWidth: .5,
+                borderColor: this.state.palette[this.state.config.datasets.length + 1].hex(),
                 data: [],
             }]
         }
@@ -292,13 +288,10 @@ class App extends Component {
                             let dataSetID = tempConfig.datasets.length
                             tempConfig.datasets[dataSetID] = {
                                 label: 'MSLP',
-                                //			backgroundColor: color(window.chartColors.red).alpha(0.5).rgbString(),
-                                //		borderColor: window.chartColors.red,
-                                fill: false,
+                                fill: true,
                                 lineTension: 0,
                                 pointRadius: 1,
-                                borderColor: getRandomColor(),
-                                borderWidth: .5,
+                                borderColor: this.state.palette[this.state.config.datasets.length + 1].hex(),
                                 data: [],
                             }
                             let hFloat
@@ -422,13 +415,11 @@ class App extends Component {
                 let tempConfig = this.state.config
                 tempConfig.datasets[dataSetID] = {
                     label: 'Data Summary',
-                    //			backgroundColor: color(window.chartColors.red).alpha(0.5).rgbString(),
-                    //		borderColor: window.chartColors.red,
-                    fill: false,
+                    fill: true,
                     lineTension: 0,
-                    pointRadius: 1,
-                    borderColor: getRandomColor(),
-                    borderWidth: .5,
+                    pointRadius: 1.5,
+                    borderColor: this.state.palette[this.state.config.datasets.length + 1].hex(),
+                    borderWidth: 2,
                     data: [],
                 };
                 for (let i = 0, len = responseJson.map.feeds.myArrayList.length; i < len; i++) {
@@ -514,7 +505,7 @@ class App extends Component {
             if (cookies.thingSpeakAPIKey) {
                 this.setState({thingSpeakAPIKey: cookies.thingSpeakAPIKey})
             }
-        } catch(e) {
+        } catch (e) {
             console.log(e); // error in the above string (in this case, yes)!
         }
     }
@@ -531,10 +522,7 @@ class App extends Component {
 
 
     updateWindowDimensions() {
-        if (this.state.virgin) {
-            this.setState({dimensions: {width: window.innerWidth, height: window.innerHeight - 100}, virgin: false})
-        }
-
+        this.setState({dimensions: {width: window.innerWidth, height: window.innerHeight - 150}, virgin: false})
     }
 
 
@@ -556,23 +544,32 @@ class App extends Component {
 
         const minMaxLatest = this.state.config.datasets.map((_, index) => {
             return (
-                <Row  key={index}>
-                    <Col xs={4} >
+                <Row key={index}>
+                    <Col xs={4}>
                         {((typeof this.state.config.datasets[index].min !== "undefined") && this.state.config.datasets[index].min_time) &&
-                        <div class="bg-danger">
-                            <span><TrendingDown/></span> {this.state.config.datasets[index].min.toFixed(2)}, {this.state.config.datasets[index].min_time.fromNow()}
+                        <div>
+                            <span><TrendingDown/></span>
+                            <mark>
+                                <strong>{this.state.config.datasets[index].min.toFixed(2)}, {this.state.config.datasets[index].min_time.fromNow()}</strong>
+                            </mark>
                         </div>}
                     </Col>
-                    <Col xs={4}  >
+                    <Col xs={4}>
                         {((typeof this.state.config.datasets[index].max !== "undefined") && this.state.config.datasets[index].max_time) &&
-                        <div class="bg-success">
-                            <span><TrendingUp/></span> {this.state.config.datasets[index].max.toFixed(2)}, {this.state.config.datasets[index].max_time.fromNow()}
-                        </div>}
+                        <div><span><TrendingUp/></span>
+                            <mark>
+                                <strong>{this.state.config.datasets[index].max.toFixed(2)}, {this.state.config.datasets[index].max_time.fromNow()} </strong>
+                            </mark>
+                        </div>
+                        }
                     </Col>
-                    <Col xs={4}  >
+                    <Col xs={4}>
                         {((typeof this.state.config.datasets[index].latest !== "undefined") && this.state.config.datasets[index].latest_time) &&
-                        <div class="bg-info">
-                            <span><Activity/></span> {this.state.config.datasets[index].latest.toFixed(2)}, {this.state.config.datasets[index].latest_time.fromNow()}
+                        <div>
+                            <span><Activity/></span>
+                            <mark>
+                                <strong>{this.state.config.datasets[index].latest.toFixed(2)}, {this.state.config.datasets[index].latest_time.fromNow()} </strong>
+                            </mark>
                         </div>}
                     </Col>
                 </Row>)
@@ -647,16 +644,14 @@ class App extends Component {
                             </Col>
                         </Row>
                         <Row style={{height: this.state.dimensions.height}}>
-                            <Col ref="chartDiv" sm={12}>
+                            <Col ref="chartDiv" style={{height: this.state.dimensions.height}} sm={12}>
                                 {this.state.lineGraphBoolean && !(this.state.channelNotVerified) &&
                                 <Line
                                     ref="chart"
                                     data={this.state.config}
-                                    height={this.state.dimensions.height}
-                                    width={this.state.dimensions.width}
                                     options={{
-                                        maintainAspectRatio: false,
                                         responsive: true,
+                                        maintainAspectRatio: false,
                                         title: {
                                             display: true,
                                             text: `ThingSpeak Data`
@@ -689,9 +684,8 @@ class App extends Component {
                                 }
                                 {this.state.bubbleGraphBoolean && !(this.state.channelNotVerified) &&
                                 <Bubble
+                                    ref="chart"
                                     data={this.state.config}
-                                    height={this.state.dimensions.height}
-                                    width={this.state.dimensions.width}
                                     options={{
                                         maintainAspectRatio: false,
                                         responsive: true,
@@ -727,9 +721,8 @@ class App extends Component {
                                 }
                                 {this.state.barGraphBoolean && !(this.state.channelNotVerified) &&
                                 <Bar
+                                    ref="chart"
                                     data={this.state.config}
-                                    height={this.state.dimensions.height}
-                                    width={this.state.dimensions.width}
                                     options={{
                                         maintainAspectRatio: false,
                                         responsive: true,
@@ -900,15 +893,6 @@ class App extends Component {
             </Container>
         )
     }
-}
-
-function getRandomColor() {
-    const letters = '0123456789ABCDEF';
-    let color = '#';
-    for (let i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color;
 }
 
 

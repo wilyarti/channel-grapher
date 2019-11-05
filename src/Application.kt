@@ -13,6 +13,7 @@ import io.ktor.html.respondHtml
 import io.ktor.request.receive
 import io.ktor.response.respond
 import kotlinx.html.body
+import java.io.File
 
 
 data class jsonReq(
@@ -73,10 +74,13 @@ fun Application.module(testing: Boolean = false) {
                 call.respondHtml { body { +"Unsuccessful request" } }
             }
         }
+        val fileStorage = File("resources/static").takeIf { it.exists() }
+        ?: File("files").takeIf { it.exists() }
+        ?: error("Can't locate files folder")
 
         static("/") {
             // server with static files
-            files("resources/static")
+            files(fileStorage)
             // embedded server
             // resources("resources/static")
 
