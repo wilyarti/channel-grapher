@@ -1,4 +1,6 @@
 import React, {Component} from 'react';
+import {instanceOf} from 'prop-types';
+
 
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -6,28 +8,33 @@ import Container from 'react-bootstrap/Container';
 import Form from 'react-bootstrap/Form';
 import Tab from 'react-bootstrap/Tab'
 import Tabs from 'react-bootstrap/Tabs'
+import Toast from 'react-bootstrap/Toast';
+
 import Alert from 'react-bootstrap/Alert';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 import Button from 'react-bootstrap/Button';
 import Spinner from 'react-bootstrap/Spinner';
 import Dropdown from 'react-bootstrap/Dropdown'
-import {Line} from 'react-chartjs-2';
-import {Bubble} from 'react-chartjs-2';
-import {Bar} from 'react-chartjs-2';
+import {Bar, Bubble, Line} from 'react-chartjs-2';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import 'react-bootstrap-timezone-picker/dist/react-bootstrap-timezone-picker.min.css';
 import moment from 'moment-timezone';
 import TimezonePicker from 'react-bootstrap-timezone-picker';
-import 'react-bootstrap-timezone-picker/dist/react-bootstrap-timezone-picker.min.css';
-import {Settings, BarChart2, Info, Sliders, TrendingUp, TrendingDown, Activity} from 'react-feather';
+import {Activity, BarChart2, Info, Settings, Sliders, TrendingDown, TrendingUp, HelpCircle} from 'react-feather';
+import {Cookies, withCookies} from 'react-cookie';
 
 const distinctColors = require('distinct-colors')
 
 class App extends Component {
+    static propTypes = {
+        cookies: instanceOf(Cookies).isRequired
+    };
+
     constructor(props) {
         super(props);
+        const {cookies} = props;
         this.state = {
             config: {
                 type: 'line',
@@ -51,9 +58,10 @@ class App extends Component {
             showChannel: false,
             channelHeading: '',
             channelBody: '',
-            thingSpeakID: '645847',
-            thingSpeakAPIKey: '',
-            thingSpeakFieldID: '1',
+            thingSpeakID: cookies.get('thingSpeakID') || '645847',
+            thingSpeakIDList: cookies.get('thingSpeakIDList') || [],
+            thingSpeakAPIKey: cookies.get('thingSpeakAPIKey') || '',
+            thingSpeakFieldID: cookies.get('thingSpeakFieldID') || '1',
             thingSpeakFieldName: 'sensor',
             thingSpeakPeriod: '',
             xLabel: 'time',
@@ -62,22 +70,21 @@ class App extends Component {
             channelTitle: '',
             channelDescription: '',
             showAlert: '',
-            errorHeading: '',
-            errorBody: '',
             numDays: '',
             dataSummaryInterval: 0,
             dataSummaryIntervalDescription: '',
-            dimensions: {width: 300, height: 300},
-            timeZone: moment.tz.guess(),
+            timeZone: cookies.get('timeZone') || moment.tz.guess(),
+            dimensions: {height: 600},
             latitude: '',
             longitude: '',
             metadata: '',
             elevation: '',
-            virgin: true,
             convertedMSLP: false,
             key: 'Config',
             palette: distinctColors({count: 56}),
-            favoriteColor: ''
+            favoriteColor: cookies.get('favoriteColor') || '',
+            msgs: []
+
         };
         this.handleDatePicker = this.handleDatePicker.bind(this)
         this.handleTimeZone = this.handleTimeZone.bind(this)
@@ -98,6 +105,26 @@ class App extends Component {
         this.toggleFill = this.toggleFill.bind(this)
         this.randomColor = this.randomColor.bind(this)
         this.convertMSLP = this.convertMSLP.bind(this)
+        this.closeToast = this.closeToast.bind(this)
+        this.setToast = this.setToast.bind(this)
+    }
+
+    closeToast(index) {
+        let msgs = this.state.msgs;
+        delete (msgs[index]);
+        this.setState({msgs});
+    }
+
+    setToast(title, message) {
+        let msgs = this.state.msgs;
+        let msg = {
+            name: 'Set Title',
+            time: new moment(),
+            body: message
+        };
+        msg.name = title;
+        msgs.push(msg);
+        this.setState({msgs});
     }
 
     barGraphSelector() {
@@ -126,6 +153,10 @@ class App extends Component {
             tempConfig.datasets[i].borderColor = favoriteColor;
         }
         this.setState({config: tempConfig, favoriteColor})
+
+        const {cookies} = this.props;
+        const cookie = favoriteColor;
+        cookies.set('favoriteColor', cookie);
     }
 
     handleDatePicker(date) {
@@ -152,6 +183,9 @@ class App extends Component {
     }
 
     handleTimeZone(timeZone) {
+        const {cookies} = this.props;
+        const cookie = timeZone;
+        cookies.set('timeZone', cookie);
         this.setState({timeZone}, () => {
             this.refreshClickHandler()
         })
@@ -163,6 +197,9 @@ class App extends Component {
 
     handleThingSpeakFieldID(e) {
         // when field is changed, scrap state of older graphs
+        const {cookies} = this.props;
+        const cookie = e.target.value;
+        cookies.set('thingSpeakFieldID', cookie);
         const defaultConfig = {
             type: 'line',
             datasets: [{
@@ -190,6 +227,9 @@ class App extends Component {
     }
 
     handleThingSpeakAPIKey(e) {
+        const {cookies} = this.props;
+        const cookie = e.target.value;
+        cookies.set('thingSpeakAPIKey', cookie);
         this.setState({channelNotVerified: true, thingSpeakAPIKey: e.target.value});
     }
 
@@ -330,7 +370,7 @@ class App extends Component {
                         }
                     )
                     .catch((error) => {
-                        console.error(error);
+                        this.setToast("Error.", "Failed to do sea level pressure conversion.")
                     }).finally(() => (this.setState({isLoading: false})));
 
             }
@@ -355,10 +395,7 @@ class App extends Component {
             .then((responseJson) => {
                 console.log(responseJson);
                 if (responseJson.success == false) {
-                    this.setState({'showAlert': 'true'})
-                    this.setState({'errorHeading': "Invalid settings"})
-                    this.setState({'errorBody': "Either the settings are invalid or no data matches the time period."})
-                    console.log("Error returning")
+                    this.setToast("Error invalid settings.", "Either the settings are invalid or no data matches the time period." + responseJson.toString())
                     return
                 }
                 console.log("Setting states")
@@ -372,17 +409,20 @@ class App extends Component {
                         this.setState({[fieldName]: undefined})
                     }
                 }
-                this.setState({channelNotVerified: false, showOptions: true, showChannel: true})
                 console.log(this.state)
-                this.setCookies()
+                const {cookies} = this.props;
+                const thingSpeakIDCookie = this.state.thingSpeakID;
+                let thingSpeakIDList = cookies.get('thingSpeakIDList') || [];
+                thingSpeakIDList.push(thingSpeakIDCookie);
+                thingSpeakIDList = [...new Set(thingSpeakIDList)];
+                cookies.set('thingSpeakID', thingSpeakIDCookie);
+                cookies.set('thingSpeakIDList', thingSpeakIDList);
+                this.setState({channelNotVerified: false, showOptions: true, showChannel: true, thingSpeakIDList})
                 this.refreshClickHandler()
             })
             .catch((error) => {
-                console.error(error);
-                this.setState({'showAlert': 'true'})
-                this.setState({'errorHeading': "Invalid settings"})
-                this.setState({'errorBody': "Error" + error})
-
+                this.setToast("Error accessing channel.", error.toString());
+                console.log(error);
             }).finally(() => (this.setState({isLoading: false})));
     }
 
@@ -390,7 +430,10 @@ class App extends Component {
         // update the timezone to match the new one
         moment.tz.setDefault(this.state.timeZone)
         this.setState({isLoading: true})
-        console.log(dID)
+        let fieldName = "field_".concat(this.state.thingSpeakFieldID)
+        if (typeof this.state[fieldName] === "undefined") {
+            this.setState({thingSpeakFieldID: 1})
+        }
         const dataSetID = parseInt(dID) ? parseInt(dID) : 0
         const APIKEY = this.state.thingSpeakAPIKey ? `&api_key=${this.state.thingSpeakAPIKey}` : ''
         const SUM = this.state.dataSummaryInterval ? `&sum=${this.state.dataSummaryInterval}` : ''
@@ -474,49 +517,29 @@ class App extends Component {
                     this.setState({elevation: responseJson.map.channel.map.elevation})
                 }
                 console.log(this.state)
-                console.log(this.refs['chart']);
-                this.refs.minMaxBox.scrollIntoView({block: 'end', behavior: 'smooth'});
             })
             .catch((error) => {
-                console.error(error);
+                this.setToast("Error retrieving channel data.", error.toString())
             }).finally(() => {
                 this.setState({isLoading: false});
             }
         );
     }
 
-    setCookies() {
-        let cookies = {}
-        if (this.state.thingSpeakID) {
-            cookies.thingSpeakID = this.state.thingSpeakID
-        }
-        if (this.state.thingSpeakAPIKey) {
-            cookies.thingSpeakAPIKey = this.state.thingSpeakAPIKey
-        }
-        document.cookie = JSON.stringify(cookies)
-    }
-
-    getCookies() {
-        if (!document.cookie) {
-            return
-        }
-        try {
-            let cookies = JSON.parse(document.cookie)
-            if (cookies.thingSpeakID) {
-                this.setState({thingSpeakID: cookies.thingSpeakID})
-            }
-            if (cookies.thingSpeakAPIKey) {
-                this.setState({thingSpeakAPIKey: cookies.thingSpeakAPIKey})
-            }
-        } catch (e) {
-            console.log(e); // error in the above string (in this case, yes)!
-        }
-    }
-
     componentDidMount() {
+        const {cookies} = this.props;
+        const cookie = 1;
+        const user = parseInt(cookies.get('userBoolean'));
+        if (user !== 1) {
+            this.setState({key: "Help"})
+            this.setToast("Welcome!", "Click on the question mark item for instructions.");
+        } else {
+            this.setToast("Welcome back!", "Welcome back! Loading your previous session....")
+            this.thingSpeakValidatorClickHandler();
+        }
+        cookies.set('userBoolean', cookie);
         this.updateWindowDimensions();
         window.addEventListener('resize', this.updateWindowDimensions);
-        this.state.virgin ? this.getCookies() : console.log("Not loading cookies.")
     }
 
     componentWillUnmount() {
@@ -525,14 +548,13 @@ class App extends Component {
 
 
     updateWindowDimensions() {
-        this.setState({dimensions: {width: window.innerWidth, height: window.innerHeight - 150}, virgin: false})
+        this.setState({dimensions: {width: window.innerWidth, height: window.innerHeight - 150}})
     }
 
 
     render() {
-        const handleDismiss = () => this.setState({showAlert: false});
         const {thingSpeakFieldID} = this.state.thingSpeakFieldID;
-        const {thingSpeakPeriod} = this.state.thingSpeakPeriod;
+        const thingSpeakIDs = this.state.thingSpeakIDList;
         const fields = [1, 2, 3, 4, 5, 6, 7, 8];
         const xLabel = this.state.xLabel
         const optionItems = fields.map((field) => {
@@ -543,6 +565,9 @@ class App extends Component {
         })
         const optionsPeriod = ['', '10', '15', '20', '30', '60', '240', '720', '1440'].map((field) => {
             return (<option key={field} value={field}>{field ? field : 'Select'} minutes</option>)
+        })
+        const thingSpeakIDList = thingSpeakIDs.map((id) => {
+            return (<option key={id} value={id}>{id}</option>)
         })
 
         const minMaxLatest = this.state.config.datasets.map((_, index) => {
@@ -577,9 +602,30 @@ class App extends Component {
                     </Col>
                 </Row>)
         })
+        const messages = this.state.msgs;
+        const msgList = messages.map((_, index) => {
+            return (
+                <Toast key={index + new Date()} show={true} onClose={() => this.closeToast(index)} autohide>
+                    <Toast.Header>
+                        <img style={{width: 20, height: 20}} src="favicon.png" className="rounded mr-2" alt=""/>
+                        <strong className="mr-auto">{messages[index].name}</strong>
+                        <small>{messages[index].time.fromNow()}</small>
+                    </Toast.Header>
+                    <Toast.Body>{messages[index].body}</Toast.Body>
+                </Toast>
+            )
+        });
 
         return (
             <Container fluid>
+                <div style={{
+                    position: 'fixed',
+                    top: 1,
+                    right: 1,
+                    zIndex: 100,
+                }}>
+                    {msgList}
+                </div>
                 <Tabs
                     id="tabs"
                     activeKey={this.state.key}
@@ -637,7 +683,7 @@ class App extends Component {
                             </Col>
                             <Col>
                                 <Form.Group controlId="validFieldID">
-                                    <Form.Control as="select" value={thingSpeakFieldID}
+                                    <Form.Control as="select" value={this.state.thingSpeakFieldID}
                                                   onChange={this.handleThingSpeakFieldID}
                                                   disabled={(this.state.channelNotVerified || this.state.isLoading)}
                                                   type="text" required>
@@ -773,14 +819,6 @@ class App extends Component {
                              role="status"
                              aria-hidden="true"
                          /> : ''}</span>}>
-                        <Row>
-                            {this.state.showAlert &&
-                            <Alert variant="danger" onClose={handleDismiss} dismissible>
-                                <Alert.Heading>{this.state.errorHeading}</Alert.Heading>
-                                {this.state.errorBody}
-                            </Alert>
-                            }
-                        </Row>
                         <br/>
                         <Row>
                             <Col sm={4}>
@@ -793,6 +831,14 @@ class App extends Component {
                                             Please provide a valid ThingSpeakID.
                                         </Form.Control.Feedback>
                                     </Form.Group>
+                                    {(this.state.thingSpeakIDList.length > 0) &&
+                                    <Form.Group controlId="Prefill">
+                                        <Form.Control type="test" as="select"
+                                                      onChange={this.handleThingSpeakID}>
+                                            {thingSpeakIDList}
+                                        </Form.Control>
+                                    </Form.Group>
+                                    }
 
                                     <Form.Group controlId="validThingSpeakFieldID">
                                         <Form.Control value={this.state.thingSpeakAPIKey}
@@ -834,7 +880,7 @@ class App extends Component {
                                             />
                                         </Form.Group>
                                         <Form.Group controlId="validPeriodSelector">
-                                            <Form.Control as="select" value={thingSpeakPeriod}
+                                            <Form.Control as="select" value={this.state.thingSpeakPeriod}
                                                           disabled={(this.state.channelNotVerified || this.state.isLoading)}
                                                           onChange={this.handleThingSpeakPeriod}
                                                           type="text" required>
@@ -892,6 +938,69 @@ class App extends Component {
                             </Col>
                         </Row>
                     </Tab>
+                    <Tab eventKey="Help"
+                         title={<span> <HelpCircle/> </span>}>
+                        <br/>
+                        <Row>
+                            <Col>
+                                <h3>Welcome!</h3>
+                                Welcome to my web app. This app is designed to graph the data from Internet-Of-Things
+                                devices which use a service called ThingSpeak.<br/>
+                                ThingSpeak is a free to use web platform for time series data from sensors.
+                                <p/>
+                                I built this web app to draw graphs from my weather stations that I built. I have one in
+                                Broome and one in Emerald.
+                                <p/>
+                                <img className="img-fluid"
+                                     src="https://cdn.thingiverse.com/renders/24/7e/e4/54/f2/0d4fcecb5e05e6607d283115aead66ec_preview_featured.jpg"
+                                     alt="" width="628" height="472"/>
+                                <p/>
+                                My weather station's use the following ThingSpeak IDs:
+                                <ul>
+                                    <li>Broome Weather Station: <strong>703886</strong></li>
+                                    <li>Emerald Weather Station: <strong>645847</strong></li>
+                                </ul>
+
+                                <h3>Instructions</h3>
+                                <ol>
+                                    <li>Click on the <Settings/> icon and enter your ThingSpeak ID and API read key into
+                                        the fields.
+                                    </li>
+                                    <li>Click on the "Load Channel" button. If your setting are valid the app will
+                                        automatically switch to the <BarChart2/> tab and draw the first field.
+                                    </li>
+                                    <li>To switch fields click on the drop down menu on the right.</li>
+                                    <li>To change dates or the time range click on the <Settings/> tab and modify the
+                                        appropriate fields.
+                                    </li>
+                                    <li>On the <BarChart2/> tab you can also change the chart type to Bar or Bubble and
+                                        summerize data for a certain perid.<br/>
+                                        Data summary is very useful for things such as rainfall.
+                                    </li>
+                                    <li>To view the channel's metadata such as location, altitude etc. Click on
+                                        the <Info/> tab.
+                                    </li>
+                                    <li>Gray tabs are disabled because there is no data loaded for them to display. Load
+                                        a channel to view these tabs.
+                                    </li>
+                                </ol>
+                                <h3>Technical Overview</h3>
+                                This app is build using the following technologies:
+                                <ul>
+                                    <li>ReactJS</li>
+                                    <li>ChartJS</li>
+                                    <li>Bootstrap</li>
+                                    <li>Ktor</li>
+                                </ul>
+                                To overcome <a
+                                href={'https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS'}>CORS</a> restrictions
+                                this app uses a JSON router on my ktor server to access ThingSpeak.
+                                <br/>
+                                To keep the app responsive the vertical div that holds the ChartJS chart is resized when
+                                ever the window is resized.
+                            </Col>
+                        </Row>
+                    </Tab>
                 </Tabs>
             </Container>
         )
@@ -899,4 +1008,4 @@ class App extends Component {
 }
 
 
-export default App;
+export default withCookies(App);

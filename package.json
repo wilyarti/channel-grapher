@@ -14,6 +14,7 @@
     "react-bootstrap": "^1.0.0-beta.9",
     "react-bootstrap-timezone-picker": "^2.0.0",
     "react-chartjs-2": "^2.7.6",
+    "react-cookie": "^4.0.1",
     "react-datepicker": "^2.8.0",
     "react-dom": "^16.8.6",
     "react-feather": "^2.0.3",
