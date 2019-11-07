@@ -30,8 +30,9 @@ const distinctColors = require('distinct-colors')
 /**
  *
  */
-import ConfigTab from './ConfigTab';
+import HelpTab from './HelpTab';
 import InfoTab from "./InfoTab";
+import ConfigTab from "./ConfigTab";
 
 class App extends Component {
     static propTypes = {
@@ -559,7 +560,6 @@ class App extends Component {
 
 
     render() {
-        const {thingSpeakFieldID} = this.state.thingSpeakFieldID;
         const thingSpeakIDs = this.state.thingSpeakIDList;
         const fields = [1, 2, 3, 4, 5, 6, 7, 8];
         const xLabel = this.state.xLabel
@@ -568,9 +568,6 @@ class App extends Component {
             if (this.state[fieldName]) {
                 return (<option value={field}>{this.state[fieldName]}</option>)
             }
-        })
-        const optionsPeriod = ['', '10', '15', '20', '30', '60', '240', '720', '1440'].map((field) => {
-            return (<option key={field} value={field}>{field ? field : 'Select'} minutes</option>)
         })
         const thingSpeakIDList = thingSpeakIDs.map((id) => {
             return (<option key={id} value={id}>{id}</option>)
@@ -698,121 +695,6 @@ class App extends Component {
                                 </Form.Group>
                             </Col>
                         </Row>
-                        <Row style={{height: this.state.dimensions.height}}>
-                            <Col ref="chartDiv" style={{height: this.state.dimensions.height}} sm={12}>
-                                {this.state.lineGraphBoolean && !(this.state.channelNotVerified) &&
-                                <Line
-                                    ref="chart"
-                                    data={this.state.config}
-                                    options={{
-                                        responsive: true,
-                                        maintainAspectRatio: false,
-                                        title: {
-                                            display: true,
-                                            text: `ThingSpeak Data`
-                                        },
-                                        scales: {
-                                            xAxes: [{
-                                                type: 'time',
-                                                display: true,
-                                                scaleLabel: {
-                                                    display: true,
-                                                    labelString: xLabel,
-                                                },
-                                                ticks: {
-                                                    major: {
-                                                        fontStyle: 'bold',
-                                                        fontColor: '#FF0000'
-                                                    }
-                                                }
-                                            }],
-                                            yAxes: [{
-                                                display: true,
-                                                scaleLabel: {
-                                                    display: true,
-                                                    labelString: this.state.thingSpeakFieldName
-                                                }
-                                            }]
-                                        }
-                                    }}
-                                />
-                                }
-                                {this.state.bubbleGraphBoolean && !(this.state.channelNotVerified) &&
-                                <Bubble
-                                    ref="chart"
-                                    data={this.state.config}
-                                    options={{
-                                        maintainAspectRatio: false,
-                                        responsive: true,
-                                        title: {
-                                            display: true,
-                                            text: `ThingSpeak Data`
-                                        },
-                                        scales: {
-                                            xAxes: [{
-                                                type: 'time',
-                                                display: true,
-                                                scaleLabel: {
-                                                    display: true,
-                                                    labelString: xLabel,
-                                                },
-                                                ticks: {
-                                                    major: {
-                                                        fontStyle: 'bold',
-                                                        fontColor: '#FF0000'
-                                                    }
-                                                }
-                                            }],
-                                            yAxes: [{
-                                                display: true,
-                                                scaleLabel: {
-                                                    display: true,
-                                                    labelString: this.state.thingSpeakFieldName
-                                                }
-                                            }]
-                                        }
-                                    }}
-                                />
-                                }
-                                {this.state.barGraphBoolean && !(this.state.channelNotVerified) &&
-                                <Bar
-                                    ref="chart"
-                                    data={this.state.config}
-                                    options={{
-                                        maintainAspectRatio: false,
-                                        responsive: true,
-                                        title: {
-                                            display: true,
-                                            text: `ThingSpeak Data`
-                                        },
-                                        scales: {
-                                            xAxes: [{
-                                                type: 'time',
-                                                display: true,
-                                                scaleLabel: {
-                                                    display: true,
-                                                    labelString: xLabel,
-                                                },
-                                                ticks: {
-                                                    major: {
-                                                        fontStyle: 'bold',
-                                                        fontColor: '#FF0000'
-                                                    }
-                                                }
-                                            }],
-                                            yAxes: [{
-                                                display: true,
-                                                scaleLabel: {
-                                                    display: true,
-                                                    labelString: this.state.thingSpeakFieldName
-                                                }
-                                            }]
-                                        }
-                                    }}
-                                />
-                                }
-                            </Col>
-                        </Row>
                         <div ref="minMaxBox">
                             {minMaxLatest}
                         </div>
@@ -826,100 +708,21 @@ class App extends Component {
                              aria-hidden="true"
                          /> : ''}</span>}>
                         <br/>
-                        <Row>
-                            <Col sm={4}>
-                                <Col>
-                                    <Form.Label>ThingSpeak ID</Form.Label>
-                                    <Form.Group controlId="validThingSpeak">
-                                        <Form.Control value={this.state.thingSpeakID} onChange={this.handleThingSpeakID}
-                                                      type="text" placeholder="ThingSpeak ID" required/>
-                                        <Form.Control.Feedback type="invalid">
-                                            Please provide a valid ThingSpeakID.
-                                        </Form.Control.Feedback>
-                                    </Form.Group>
-                                    {(this.state.thingSpeakIDList.length > 0) &&
-                                    <Form.Group controlId="Prefill">
-                                        <Form.Control type="test" as="select"
-                                                      onChange={this.handleThingSpeakID}>
-                                            {thingSpeakIDList}
-                                        </Form.Control>
-                                    </Form.Group>
-                                    }
-
-                                    <Form.Group controlId="validThingSpeakFieldID">
-                                        <Form.Control value={this.state.thingSpeakAPIKey}
-                                                      onChange={this.handleThingSpeakAPIKey}
-                                                      type="text" placeholder="Read API Key" required/>
-                                        <Form.Control.Feedback type="invalid">
-                                            Please provide a valid ThingSpeak API key.
-                                        </Form.Control.Feedback>
-                                    </Form.Group>
-                                    <Button variant="primary" disabled={this.state.isLoading}
-                                            onClick={!this.state.isLoading ? this.thingSpeakValidatorClickHandler : null}>
-                                        {this.state.isLoading ? <Spinner
-                                            as="span"
-                                            animation="grow"
-                                            size="sm"
-                                            role="status"
-                                            aria-hidden="true"
-                                        /> : 'Load Channel'}
-                                    </Button>
-                                    <hr/>
-
-                                    {!this.state.channelNotVerified &&
-                                    <div>
-                                        <Form.Group controlId="validDate">
-                                            <Form.Label>Select Date: </Form.Label>
-                                            <DatePicker dateFormat="yyyy-MM-dd"
-                                                        disabled={(this.state.channelNotVerified || this.state.isLoading || this.state.thingSpeakPeriod)}
-                                                        selected={this.state.endDate}
-                                                        onChange={this.handleDatePicker}
-                                            />
-                                        </Form.Group>
-                                        <Form.Group>
-                                            <TimezonePicker
-                                                absolute={false}
-                                                disabled={(this.state.channelNotVerified || this.state.isLoading)}
-                                                defaultValue={this.state.timeZone}
-                                                placeholder="Select timezone..."
-                                                onChange={this.handleTimeZone}
-                                            />
-                                        </Form.Group>
-                                        <Form.Group controlId="validPeriodSelector">
-                                            <Form.Control as="select" value={this.state.thingSpeakPeriod}
-                                                          disabled={(this.state.channelNotVerified || this.state.isLoading)}
-                                                          onChange={this.handleThingSpeakPeriod}
-                                                          type="text" required>
-                                                {optionsPeriod}
-                                            </Form.Control>
-                                        </Form.Group>
-                                        <Form.Group controlId="validNumDays">
-                                            <Form.Control value={this.state.numDays} onChange={this.handleNumDays}
-                                                          type="text"
-                                                          disabled={(this.state.channelNotVerified || this.state.isLoading || this.state.thingSpeakPeriod)}
-                                                          placeholder="Number of Days"
-                                                          isInvalid={this.state.numDays > 31}
-                                                          required/>
-                                            <Form.Control.Feedback type="invalid">
-                                                Please provide a number less than 31.
-                                            </Form.Control.Feedback>
-                                        </Form.Group>
-                                        <Button variant={!this.state.channelNotVerified ? 'primary' : 'danger'}
-                                                disabled={(this.state.channelNotVerified || this.state.isLoading)}
-                                                onClick={!(this.state.channelNotVerified || this.state.isLoading) ? this.refreshClickHandler : null}>
-                                            {(this.state.isLoading) ? <Spinner
-                                                as="span"
-                                                animation="grow"
-                                                size="sm"
-                                                role="status"
-                                                aria-hidden="true"
-                                            /> : ''}
-                                            {(this.state.channelNotVerified) ? 'Load Channel First' : 'Load Data'}
-                                        </Button>
-                                    </div>}
-                                </Col>
-                            </Col>
-                        </Row>
+                        <ConfigTab thingSpeakID={this.state.thingSpeakID}
+                                   handleThingSpeakID={this.handleThingSpeakID}
+                                   thingSpeakIDList={this.state.thingSpeakIDList}
+                                   thingSpeakAPIKey={this.state.thingSpeakAPIKey}
+                                   handleThingSpeakAPIKey={this.handleThingSpeakAPIKey}
+                                   isLoading={this.state.isLoading}
+                                   thingSpeakValidatorClickHandler={this.thingSpeakValidatorClickHandler}
+                                   channelNotVerified={this.state.channelNotVerified}
+                                   thingSpeakPeriod={this.state.thingSpeakPeriod}
+                                   endDate={this.state.endDate}
+                                   handleDatePicker={this.handleDatePicker}
+                                   handleTimeZone={this.handleTimeZone}
+                                   numDays={this.state.numDays}
+                                   handleNumDays={this.handleNumDays}
+                        />
                     </Tab>
                     <Tab eventKey="Info"
                          disabled={(this.state.channelNotVerified || this.state.isLoading)}
@@ -938,7 +741,7 @@ class App extends Component {
                     <Tab eventKey="Help"
                          title={<span> <HelpCircle/> </span>}>
                         <br/>
-                    <ConfigTab/>
+                    <HelpTab/>
                     </Tab>
                 </Tabs>
             </Container>
