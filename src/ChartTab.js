@@ -4,119 +4,58 @@ import Row from "react-bootstrap/Row";
 import React from "react";
 
 
-const ChartTab () => (props) {
+
+const ChartTab = (props) => {
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        title: {
+            display: true,
+            text: `ThingSpeak Data`
+        },
+        scales: {
+            xAxes: [{
+                type: 'time',
+                display: true,
+                scaleLabel: {
+                    display: true,
+                    labelString: "Time",
+                },
+                ticks: {
+                    major: {
+                        fontStyle: 'bold',
+                        fontColor: '#FF0000'
+                    }
+                }
+            }],
+            yAxes: [{
+                display: true,
+                scaleLabel: {
+                    display: true,
+                    labelString: props.thingSpeakFieldName
+                }
+            }]
+        }
+    }
     return (
-        <Row style={{height: this.state.dimensions.height}}>
-            <Col ref="chartDiv" style={{height: this.state.dimensions.height}} sm={12}>
-                {this.state.lineGraphBoolean && !(this.state.channelNotVerified) &&
+        <Row style={{height: props.dimensions.height}}>
+            <Col style={{height: props.dimensions.height}} sm={12}>
+                {props.lineGraphBoolean && !(props.channelNotVerified) &&
                 <Line
-                    ref="chart"
-                    data={this.state.config}
-                    options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        title: {
-                            display: true,
-                            text: `ThingSpeak Data`
-                        },
-                        scales: {
-                            xAxes: [{
-                                type: 'time',
-                                display: true,
-                                scaleLabel: {
-                                    display: true,
-                                    labelString: xLabel,
-                                },
-                                ticks: {
-                                    major: {
-                                        fontStyle: 'bold',
-                                        fontColor: '#FF0000'
-                                    }
-                                }
-                            }],
-                            yAxes: [{
-                                display: true,
-                                scaleLabel: {
-                                    display: true,
-                                    labelString: this.state.thingSpeakFieldName
-                                }
-                            }]
-                        }
-                    }}
+                    data={props.config}
+                    options={chartOptions}
                 />
                 }
-                {this.state.bubbleGraphBoolean && !(this.state.channelNotVerified) &&
+                {props.bubbleGraphBoolean && !(props.channelNotVerified) &&
                 <Bubble
-                    ref="chart"
-                    data={this.state.config}
-                    options={{
-                        maintainAspectRatio: false,
-                        responsive: true,
-                        title: {
-                            display: true,
-                            text: `ThingSpeak Data`
-                        },
-                        scales: {
-                            xAxes: [{
-                                type: 'time',
-                                display: true,
-                                scaleLabel: {
-                                    display: true,
-                                    labelString: xLabel,
-                                },
-                                ticks: {
-                                    major: {
-                                        fontStyle: 'bold',
-                                        fontColor: '#FF0000'
-                                    }
-                                }
-                            }],
-                            yAxes: [{
-                                display: true,
-                                scaleLabel: {
-                                    display: true,
-                                    labelString: this.state.thingSpeakFieldName
-                                }
-                            }]
-                        }
-                    }}
+                    data={props.config}
+                    options={chartOptions}
                 />
                 }
-                {this.state.barGraphBoolean && !(this.state.channelNotVerified) &&
+                {props.barGraphBoolean && !(props.channelNotVerified) &&
                 <Bar
-                    ref="chart"
-                    data={this.state.config}
-                    options={{
-                        maintainAspectRatio: false,
-                        responsive: true,
-                        title: {
-                            display: true,
-                            text: `ThingSpeak Data`
-                        },
-                        scales: {
-                            xAxes: [{
-                                type: 'time',
-                                display: true,
-                                scaleLabel: {
-                                    display: true,
-                                    labelString: xLabel,
-                                },
-                                ticks: {
-                                    major: {
-                                        fontStyle: 'bold',
-                                        fontColor: '#FF0000'
-                                    }
-                                }
-                            }],
-                            yAxes: [{
-                                display: true,
-                                scaleLabel: {
-                                    display: true,
-                                    labelString: this.state.thingSpeakFieldName
-                                }
-                            }]
-                        }
-                    }}
+                    data={props.config}
+                    options={chartOptions}
                 />
                 }
             </Col>
