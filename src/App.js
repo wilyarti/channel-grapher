@@ -34,7 +34,7 @@ import HelpTab from './HelpTab';
 import InfoTab from "./InfoTab";
 import ConfigTab from "./ConfigTab";
 import ChartTab from "./ChartTab";
-import ChartMenu from "./ChartMenu";
+import ChannelSelector from "./ChannelSelector";
 import {
     handleDatePicker,
     handleTimeZone,
@@ -58,6 +58,7 @@ import {
     closeToast,
     setToast
 } from "./Functions";
+import ChartFunctionsMenu from "./ChartFunctionsMenu";
 
 class App extends Component {
     static propTypes = {
@@ -144,16 +145,13 @@ class App extends Component {
 
     componentDidMount() {
         const {cookies} = this.props;
-        const cookie = 1;
-        const user = parseInt(cookies.get('userBoolean'));
-        if (user !== 1) {
+        if (!cookies.get('thingSpeakID')) {
             this.setState({key: "Help"})
             this.setToast("Welcome!", "Click on the question mark item for instructions.");
         } else {
             this.setToast("Welcome back!", "Welcome back! Loading your previous session....")
             this.thingSpeakValidatorClickHandler();
         }
-        cookies.set('userBoolean', cookie);
         this.updateWindowDimensions();
         window.addEventListener('resize', this.updateWindowDimensions);
     }
@@ -238,31 +236,16 @@ class App extends Component {
                     onSelect={key => this.setState({key})}
                 >
                     <Tab eventKey="Graph" disabled={(this.state.channelNotVerified || this.state.isLoading)}
-                         title={<span> <BarChart2/> {(this.state.isLoading && !this.state.channelNotVerified) ? <Spinner
-                             as="span"
-                             animation="grow"
-                             size="sm"
-                             role="status"
-                             aria-hidden="true"
-                         /> : ''}</span>
+                         title={<span> <BarChart2/> {(this.state.isLoading && !this.state.channelNotVerified) ?
+                             <Spinner
+                                 as="span"
+                                 animation="grow"
+                                 size="sm"
+                                 role="status"
+                                 aria-hidden="true"
+                             /> : ''}</span>
 
                          }>
-                        <ChartMenu isLoading={this.state.isLoading}
-                                   channelNotVerified={this.state.channelNotVerified}
-                                   barGraphSelector={this.barGraphSelector}
-                                   bubbleGraphSelector={this.bubbleGraphSelector}
-                                   lineGraphSelector={this.lineGraphSelector}
-                                   toggleFill={this.toggleFill}
-                                   randomColor={this.randomColor}
-                                   convertMSLP={this.convertMSLP}
-                                   setDataSummaryInterval30={this.setDataSummaryInterval30}
-                                   setDataSummaryInterval60={this.setDataSummaryInterval60}
-                                   setDataSummaryIntervalDaily={this.setDataSummaryIntervalDaily}
-                                   thingSpeakFieldID={this.state.thingSpeakFieldID}
-                                   handleThingSpeakFieldID={this.handleThingSpeakFieldID}
-                                   optionItems={optionItems}
-
-                        />
 
                         <ChartTab dimensions={this.state.dimensions}
                                   lineGraphBoolean={this.state.lineGraphBoolean}
@@ -276,14 +259,36 @@ class App extends Component {
                             {minMaxLatest}
                         </div>
                     </Tab>
+                    {(this.state.key == "Graph") &&
+                    <Tab title={<ChartFunctionsMenu isLoading={this.state.isLoading}
+                                                    channelNotVerified={this.state.channelNotVerified}
+                                                    barGraphSelector={this.barGraphSelector}
+                                                    bubbleGraphSelector={this.bubbleGraphSelector}
+                                                    lineGraphSelector={this.lineGraphSelector}
+                                                    toggleFill={this.toggleFill}
+                                                    randomColor={this.randomColor}
+                                                    convertMSLP={this.convertMSLP}
+                                                    setDataSummaryInterval30={this.setDataSummaryInterval30}
+                                                    setDataSummaryInterval60={this.setDataSummaryInterval60}
+                                                    setDataSummaryIntervalDaily={this.setDataSummaryIntervalDaily}/>}
+                    />
+                    }
+                    {(this.state.key == "Graph") && <Tab title={<ChannelSelector
+                        isLoading={this.state.isLoading}
+                        channelNotVerified={this.state.channelNotVerified}
+                        thingSpeakFieldID={this.state.thingSpeakFieldID}
+                        handleThingSpeakFieldID={this.handleThingSpeakFieldID}
+                        optionItems={optionItems}/>}/>
+                    }
                     <Tab eventKey="Config"
-                         title={<span><Settings/> {(this.state.isLoading && this.state.channelNotVerified) ? <Spinner
-                             as="span"
-                             animation="grow"
-                             size="sm"
-                             role="status"
-                             aria-hidden="true"
-                         /> : ''}</span>}>
+                         title={<span><Settings/> {(this.state.isLoading && this.state.channelNotVerified) ?
+                             <Spinner
+                                 as="span"
+                                 animation="grow"
+                                 size="sm"
+                                 role="status"
+                                 aria-hidden="true"
+                             /> : ''}</span>}>
                         <br/>
                         <ConfigTab thingSpeakID={this.state.thingSpeakID}
                                    handleThingSpeakID={this.handleThingSpeakID}
