@@ -28,7 +28,9 @@ export function lineGraphSelector() {
 
 export function toggleFill() {
     let tempConfig = this.state.config
-    tempConfig.datasets[0].fill = !tempConfig.datasets[0].fill
+    tempConfig.datasets.map((_, index) => {
+        tempConfig.datasets[index].fill = !tempConfig.datasets[index].fill
+    })
     this.setState({config: tempConfig})
 }
 
@@ -418,5 +420,5 @@ export function refreshClickHandler(dID) {
     );
 }
 export function updateWindowDimensions() {
-    this.setState({dimensions: {width: window.innerWidth, height: window.innerHeight - 150}})
+    this.setState({dimensions: {width: window.innerWidth, height: window.innerHeight - 100}})
 }
