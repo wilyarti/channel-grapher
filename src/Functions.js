@@ -422,5 +422,5 @@ export function refreshClickHandler(dID) {
     );
 }
 export function updateWindowDimensions() {
-    this.setState({dimensions: {width: window.innerWidth, height: window.innerHeight - 120}})
+    this.setState({dimensions: {width: window.innerWidth, height: window.innerHeight - 150}})
 }

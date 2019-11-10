@@ -225,7 +225,7 @@ class App extends Component {
                     onSelect={key => this.setState({key})}
                 >
                     <Tab eventKey="Graph"
-                         title={<span> <BarChart2/> {(this.state.isLoading && !this.state.channelNotVerified) ?
+                         title={<span> <BarChart2 size={(this.state.key === "Graph") ? 30 : 24}/> {(this.state.isLoading && !this.state.channelNotVerified) ?
                              <Spinner
                                  as="span"
                                  animation="grow"
@@ -247,7 +247,8 @@ class App extends Component {
                                                     convertMSLP={this.convertMSLP}
                                                     setDataSummaryInterval30={this.setDataSummaryInterval30}
                                                     setDataSummaryInterval60={this.setDataSummaryInterval60}
-                                                    setDataSummaryIntervalDaily={this.setDataSummaryIntervalDaily}/>
+                                                    setDataSummaryIntervalDaily={this.setDataSummaryIntervalDaily}
+                                />
                             </Col>
                             <ChannelSelector isLoading={this.state.isLoading}
                                              channelNotVerified={this.state.channelNotVerified}
@@ -268,7 +269,7 @@ class App extends Component {
                     </Tab>
 
                     <Tab eventKey="Config"
-                         title={<span><Settings/> {(this.state.isLoading && this.state.channelNotVerified) ?
+                         title={<span><Settings size={(this.state.key === "Config") ? 30 : 24}/> {(this.state.isLoading && this.state.channelNotVerified) ?
                              <Spinner
                                  as="span"
                                  animation="grow"
@@ -285,17 +286,19 @@ class App extends Component {
                                    isLoading={this.state.isLoading}
                                    thingSpeakValidatorClickHandler={this.thingSpeakValidatorClickHandler}
                                    channelNotVerified={this.state.channelNotVerified}
-                                   thingSpeakPeriod={this.state.thingSpeakPeriod}
                                    endDate={this.state.endDate}
                                    handleDatePicker={this.handleDatePicker}
                                    handleTimeZone={this.handleTimeZone}
                                    numDays={this.state.numDays}
                                    handleNumDays={this.handleNumDays}
+                                   refreshClickHandler={this.refreshClickHandler}
+                                   thingSpeakPeriod={this.thingSpeakPeriod}
+                                   handleThingSpeakPeriod={this.handleThingSpeakPeriod}
                         />
                     </Tab>
                     <Tab eventKey="Info"
                          disabled={(this.state.channelNotVerified || this.state.isLoading)}
-                         title={<span> <Info/> </span>}>
+                         title={<span> <Info size={(this.state.key === "Info") ? 30 : 24}/> </span>}>
                         <br/>
                         <InfoTab
                             isLoading={this.state.isLoading}
@@ -308,7 +311,7 @@ class App extends Component {
                         />
                     </Tab>
                     <Tab eventKey="Help"
-                         title={<span> <HelpCircle/> </span>}>
+                         title={<span> <HelpCircle size={(this.state.key === "Help") ? 30 : 24}/> </span>}>
                         <br/>
                         <HelpTab/>
                     </Tab>
