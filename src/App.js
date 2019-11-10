@@ -22,7 +22,7 @@ import ChartComponent, {Bar, Bubble, Line} from 'react-chartjs-2';
 import DatePicker from "react-datepicker";
 import moment from 'moment-timezone';
 import TimezonePicker from 'react-bootstrap-timezone-picker';
-import {Activity, BarChart2, Info, Settings, Sliders, TrendingDown, TrendingUp, HelpCircle} from 'react-feather';
+import {Activity, BarChart2, Info, Settings, Sliders, TrendingDown, TrendingUp, HelpCircle, List} from 'react-feather';
 import {Cookies, withCookies} from 'react-cookie';
 
 const distinctColors = require('distinct-colors')
@@ -142,14 +142,9 @@ class App extends Component {
         this.setToast = setToast.bind(this)
     }
 
-
     componentDidMount() {
         const {cookies} = this.props;
-        if (!cookies.get('thingSpeakID')) {
-            this.setState({key: "Help"})
-            this.setToast("Welcome!", "Click on the question mark item for instructions.");
-        } else {
-            this.setToast("Welcome back!", "Welcome back! Loading your previous session....")
+        if (cookies.get('thingSpeakID')) {
             this.thingSpeakValidatorClickHandler();
         }
         this.updateWindowDimensions();
@@ -159,7 +154,6 @@ class App extends Component {
     componentWillUnmount() {
         window.removeEventListener('resize', this.updateWindowDimensions);
     }
-
     render() {
         const thingSpeakIDs = this.state.thingSpeakIDList;
         const thingSpeakIDList = thingSpeakIDs.map((id) => {
@@ -175,35 +169,30 @@ class App extends Component {
 
         const minMaxLatest = this.state.config.datasets.map((_, index) => {
             return (
-                <Row key={index}>
+                <Row>
+                    {((typeof this.state.config.datasets[index].min !== "undefined") && this.state.config.datasets[index].min_time) &&
                     <Col xs={4}>
-                        {((typeof this.state.config.datasets[index].min !== "undefined") && this.state.config.datasets[index].min_time) &&
-                        <div>
-                            <span><TrendingDown/></span>
-                            <mark>
-                                <strong>{this.state.config.datasets[index].min.toFixed(2)}, {this.state.config.datasets[index].min_time.fromNow()}</strong>
-                            </mark>
-                        </div>}
+                        <span><TrendingDown/></span>
+                        <mark>
+                            <strong>{this.state.config.datasets[index].min.toFixed(2)}, {this.state.config.datasets[index].min_time.fromNow()}</strong>
+                        </mark>
+                    </Col>}
+                    {((typeof this.state.config.datasets[index].max !== "undefined") && this.state.config.datasets[index].max_time) &&
+                    <Col xs={4}><span><TrendingUp/></span>
+                        <mark>
+                            <strong>{this.state.config.datasets[index].max.toFixed(2)}, {this.state.config.datasets[index].max_time.fromNow()} </strong>
+                        </mark>
                     </Col>
+                    }
+                    {((typeof this.state.config.datasets[index].latest !== "undefined") && this.state.config.datasets[index].latest_time) &&
                     <Col xs={4}>
-                        {((typeof this.state.config.datasets[index].max !== "undefined") && this.state.config.datasets[index].max_time) &&
-                        <div><span><TrendingUp/></span>
-                            <mark>
-                                <strong>{this.state.config.datasets[index].max.toFixed(2)}, {this.state.config.datasets[index].max_time.fromNow()} </strong>
-                            </mark>
-                        </div>
-                        }
-                    </Col>
-                    <Col xs={4}>
-                        {((typeof this.state.config.datasets[index].latest !== "undefined") && this.state.config.datasets[index].latest_time) &&
-                        <div>
-                            <span><Activity/></span>
-                            <mark>
-                                <strong>{this.state.config.datasets[index].latest.toFixed(2)}, {this.state.config.datasets[index].latest_time.fromNow()} </strong>
-                            </mark>
-                        </div>}
-                    </Col>
-                </Row>)
+                        <span><Activity/></span>
+                        <mark>
+                            <strong>{this.state.config.datasets[index].latest.toFixed(2)}, {this.state.config.datasets[index].latest_time.fromNow()} </strong>
+                        </mark>
+                    </Col>}
+                </Row>
+            )
         })
         const messages = this.state.msgs;
         const msgList = messages.map((_, index) => {
@@ -235,7 +224,7 @@ class App extends Component {
                     size="sm"
                     onSelect={key => this.setState({key})}
                 >
-                    <Tab eventKey="Graph" disabled={(this.state.channelNotVerified || this.state.isLoading)}
+                    <Tab eventKey="Graph"
                          title={<span> <BarChart2/> {(this.state.isLoading && !this.state.channelNotVerified) ?
                              <Spinner
                                  as="span"
@@ -246,21 +235,9 @@ class App extends Component {
                              /> : ''}</span>
 
                          }>
-
-                        <ChartTab dimensions={this.state.dimensions}
-                                  lineGraphBoolean={this.state.lineGraphBoolean}
-                                  barGraphBoolean={this.state.barGraphBoolean}
-                                  bubbleGraphBoolean={this.state.bubbleGraphBoolean}
-                                  channelNotVerified={this.state.channelNotVerified}
-                                  config={this.state.config}
-
-                        />
-                        <div ref="minMaxBox">
-                            {minMaxLatest}
-                        </div>
-                    </Tab>
-                    {(this.state.key == "Graph") &&
-                    <Tab title={<ChartFunctionsMenu isLoading={this.state.isLoading}
+                        <Row style={{marginTop: 5,}}>
+                            <Col xs={2}>
+                                <ChartFunctionsMenu isLoading={this.state.isLoading}
                                                     channelNotVerified={this.state.channelNotVerified}
                                                     barGraphSelector={this.barGraphSelector}
                                                     bubbleGraphSelector={this.bubbleGraphSelector}
@@ -270,16 +247,26 @@ class App extends Component {
                                                     convertMSLP={this.convertMSLP}
                                                     setDataSummaryInterval30={this.setDataSummaryInterval30}
                                                     setDataSummaryInterval60={this.setDataSummaryInterval60}
-                                                    setDataSummaryIntervalDaily={this.setDataSummaryIntervalDaily}/>}
-                    />
-                    }
-                    {(this.state.key == "Graph") && <Tab title={<ChannelSelector
-                        isLoading={this.state.isLoading}
-                        channelNotVerified={this.state.channelNotVerified}
-                        thingSpeakFieldID={this.state.thingSpeakFieldID}
-                        handleThingSpeakFieldID={this.handleThingSpeakFieldID}
-                        optionItems={optionItems}/>}/>
-                    }
+                                                    setDataSummaryIntervalDaily={this.setDataSummaryIntervalDaily}/>
+                            </Col>
+                            <ChannelSelector isLoading={this.state.isLoading}
+                                             channelNotVerified={this.state.channelNotVerified}
+                                             thingSpeakFieldID={this.state.thingSpeakFieldID}
+                                             handleThingSpeakFieldID={this.handleThingSpeakFieldID}
+                                             optionItems={optionItems}
+                            />
+                        </Row>
+                        <ChartTab dimensions={this.state.dimensions}
+                                  lineGraphBoolean={this.state.lineGraphBoolean}
+                                  barGraphBoolean={this.state.barGraphBoolean}
+                                  bubbleGraphBoolean={this.state.bubbleGraphBoolean}
+                                  channelNotVerified={this.state.channelNotVerified}
+                                  thingSpeakFieldName={this.state.thingSpeakFieldName}
+                                  config={this.state.config}
+                        />
+                        {minMaxLatest}
+                    </Tab>
+
                     <Tab eventKey="Config"
                          title={<span><Settings/> {(this.state.isLoading && this.state.channelNotVerified) ?
                              <Spinner
@@ -292,7 +279,7 @@ class App extends Component {
                         <br/>
                         <ConfigTab thingSpeakID={this.state.thingSpeakID}
                                    handleThingSpeakID={this.handleThingSpeakID}
-                                   thingSpeakIDList={this.state.thingSpeakIDList}
+                                   thingSpeakIDList={thingSpeakIDList}
                                    thingSpeakAPIKey={this.state.thingSpeakAPIKey}
                                    handleThingSpeakAPIKey={this.handleThingSpeakAPIKey}
                                    isLoading={this.state.isLoading}

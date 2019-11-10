@@ -85,6 +85,8 @@ export function handleTimeZone(timeZone) {
 }
 
 export function handleThingSpeakID(e) {
+    console.log(e);
+    console.log("clicked");
     this.setState({channelNotVerified: true, thingSpeakID: e.target.value});
 }
 
@@ -420,5 +422,5 @@ export function refreshClickHandler(dID) {
     );
 }
 export function updateWindowDimensions() {
-    this.setState({dimensions: {width: window.innerWidth, height: window.innerHeight - 100}})
+    this.setState({dimensions: {width: window.innerWidth, height: window.innerHeight - 120}})
 }

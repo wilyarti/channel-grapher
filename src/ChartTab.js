@@ -11,7 +11,7 @@ const ChartTab = (props) => {
         maintainAspectRatio: false,
         title: {
             display: true,
-            text: `ThingSpeak Data`
+            text:  props.thingSpeakFieldName
         },
         scales: {
             xAxes: [{
@@ -32,7 +32,7 @@ const ChartTab = (props) => {
                 display: true,
                 scaleLabel: {
                     display: true,
-                    labelString: props.thingSpeakFieldName
+                    labelString: 'Reading'
                 }
             }]
         }
