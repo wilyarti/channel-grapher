@@ -4,7 +4,6 @@ import Row from "react-bootstrap/Row";
 import React from "react";
 
 
-
 const ChartTab = (props) => {
     const chartOptions = {
         responsive: true,

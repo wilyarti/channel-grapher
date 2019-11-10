@@ -1,10 +1,7 @@
-import {BarChart2, HelpCircle, Info, Settings} from "react-feather";
+import {BarChart2, Info, Settings} from "react-feather";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-import Tab from "react-bootstrap/Tab";
 import React from "react";
-import Tabs from "react-bootstrap/Tabs";
-import Container from "react-bootstrap/Container";
 
 const HelpTab = () => {
     return (

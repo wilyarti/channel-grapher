@@ -8,25 +8,15 @@ import "react-datepicker/dist/react-datepicker.css";
 import 'react-bootstrap-timezone-picker/dist/react-bootstrap-timezone-picker.min.css';
 
 import Container from 'react-bootstrap/Container';
-import Form from 'react-bootstrap/Form';
 import Tab from 'react-bootstrap/Tab'
 import Tabs from 'react-bootstrap/Tabs'
 import Toast from 'react-bootstrap/Toast';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
-import Button from 'react-bootstrap/Button';
 import Spinner from 'react-bootstrap/Spinner';
-import Dropdown from 'react-bootstrap/Dropdown'
-import ChartComponent, {Bar, Bubble, Line} from 'react-chartjs-2';
-
-import DatePicker from "react-datepicker";
 import moment from 'moment-timezone';
-import TimezonePicker from 'react-bootstrap-timezone-picker';
-import {Activity, BarChart2, Info, Settings, Sliders, TrendingDown, TrendingUp, HelpCircle, List} from 'react-feather';
+import {Activity, BarChart2, HelpCircle, Info, Settings, TrendingDown, TrendingUp} from 'react-feather';
 import {Cookies, withCookies} from 'react-cookie';
-
-const distinctColors = require('distinct-colors')
-
 /**
  * Tab contents and functions.
  */
@@ -36,29 +26,31 @@ import ConfigTab from "./ConfigTab";
 import ChartTab from "./ChartTab";
 import ChannelSelector from "./ChannelSelector";
 import {
-    handleDatePicker,
-    handleTimeZone,
-    refreshClickHandler,
-    thingSpeakValidatorClickHandler,
-    handleThingSpeakID,
-    handleThingSpeakFieldID,
-    handleThingSpeakAPIKey,
-    handleThingSpeakPeriod,
-    handleNumDays,
-    updateWindowDimensions,
     barGraphSelector,
     bubbleGraphSelector,
+    closeToast,
+    convertMSLP,
+    handleDatePicker,
+    handleNumDays,
+    handleThingSpeakAPIKey,
+    handleThingSpeakFieldID,
+    handleThingSpeakID,
+    handleThingSpeakPeriod,
+    handleTimeZone,
     lineGraphSelector,
+    randomColor,
+    refreshClickHandler,
     setDataSummaryInterval30,
     setDataSummaryInterval60,
     setDataSummaryIntervalDaily,
+    setToast,
+    thingSpeakValidatorClickHandler,
     toggleFill,
-    randomColor,
-    convertMSLP,
-    closeToast,
-    setToast
+    updateWindowDimensions
 } from "./Functions";
 import ChartFunctionsMenu from "./ChartFunctionsMenu";
+
+const distinctColors = require('distinct-colors')
 
 class App extends Component {
     static propTypes = {

@@ -1,6 +1,5 @@
 import Dropdown from "react-bootstrap/Dropdown";
 import {Sliders} from "react-feather";
-import Col from "react-bootstrap/Col";
 import React from "react";
 
 const ChartFunctionsMenu = (props) => {

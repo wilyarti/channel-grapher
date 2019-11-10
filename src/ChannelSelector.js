@@ -1,9 +1,5 @@
-import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-import Dropdown from "react-bootstrap/Dropdown";
-import {List} from "react-feather";
 import Form from "react-bootstrap/Form";
-import Tab from "react-bootstrap/Tab";
 import React from "react";
 
 
