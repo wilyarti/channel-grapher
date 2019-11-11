@@ -49,7 +49,8 @@ export function randomColor() {
 
     const {cookies} = this.props;
     const cookie = favoriteColor;
-    cookies.set('favoriteColor', cookie);
+    const date = new Date();
+    cookies.set('favoriteColor', cookie, {expires: new Date(date.getFullYear()+1,date.getMonth(), date.getDay())});
 }
 
 export function handleDatePicker(date) {
@@ -94,7 +95,8 @@ export function handleThingSpeakFieldID(e) {
     // when field is changed, scrap state of older graphs
     const {cookies} = this.props;
     const cookie = e.target.value;
-    cookies.set('thingSpeakFieldID', cookie);
+    const date = new Date();
+    cookies.set('thingSpeakFieldID', cookie, {expires: new Date(date.getFullYear()+1,date.getMonth(), date.getDay())});
     const defaultConfig = {
         type: 'line',
         datasets: [{
@@ -124,7 +126,8 @@ export function handleThingSpeakFieldID(e) {
 export function handleThingSpeakAPIKey(e) {
     const {cookies} = this.props;
     const cookie = e.target.value;
-    cookies.set('thingSpeakAPIKey', cookie);
+    const date = new Date();
+    cookies.set('thingSpeakAPIKey', cookie, {expires: new Date(date.getFullYear()+1,date.getMonth(), date.getDay())});
     this.setState({channelNotVerified: true, thingSpeakAPIKey: e.target.value});
 }
 
@@ -311,8 +314,9 @@ export function thingSpeakValidatorClickHandler() {
             let thingSpeakIDList = cookies.get('thingSpeakIDList') || [];
             thingSpeakIDList.push(thingSpeakIDCookie);
             thingSpeakIDList = [...new Set(thingSpeakIDList)];
-            cookies.set('thingSpeakID', thingSpeakIDCookie);
-            cookies.set('thingSpeakIDList', thingSpeakIDList);
+            const date = new Date();
+            cookies.set('thingSpeakID', thingSpeakIDCookie, {expires: new Date(date.getFullYear()+1,date.getMonth(), date.getDay())});
+            cookies.set('thingSpeakIDList', thingSpeakIDList, {expires: new Date(date.getFullYear()+1,date.getMonth(), date.getDay())});
             this.setState({channelNotVerified: false, showOptions: true, showChannel: true, thingSpeakIDList})
             this.refreshClickHandler()
         })

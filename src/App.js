@@ -6,7 +6,6 @@ import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "react-datepicker/dist/react-datepicker.css";
 import 'react-bootstrap-timezone-picker/dist/react-bootstrap-timezone-picker.min.css';
-
 import Container from 'react-bootstrap/Container';
 import Tab from 'react-bootstrap/Tab'
 import Tabs from 'react-bootstrap/Tabs'
@@ -91,7 +90,7 @@ class App extends Component {
             thingSpeakPeriod: '',
             xLabel: 'time',
             startDate: '',
-            endDate: new Date(),
+            //endDate: new Date(), // Don't set as we will not get the latest data without page reload.
             channelTitle: '',
             channelDescription: '',
             showAlert: '',
