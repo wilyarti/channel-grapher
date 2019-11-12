@@ -57,7 +57,7 @@ const ConfigTab = (props) => {
                     {!props.channelNotVerified &&
                     <div>
                         <Form.Group controlId="validDate">
-                            <Form.Label>Select Date: </Form.Label>
+                            <Form.Label>End Date: </Form.Label>
                             <DatePicker dateFormat="yyyy-MM-dd"
                                         disabled={(props.channelNotVerified || props.isLoading || props.thingSpeakPeriod)}
                                         selected={props.endDate}
@@ -69,10 +69,12 @@ const ConfigTab = (props) => {
                                 absolute={false}
                                 disabled={(props.channelNotVerified || props.isLoading)}
                                 defaultValue={props.timeZone}
-                                placeholder="Select timezone..."
+                                placeholder="Change timezone..."
                                 onChange={props.handleTimeZone}
                             />
                         </Form.Group>
+                        Period:
+                        <hr/>
                         <Form.Group controlId="validPeriodSelector">
                             <Form.Control as="select" value={props.thingSpeakPeriod}
                                           disabled={(props.channelNotVerified || props.isLoading)}
@@ -86,10 +88,10 @@ const ConfigTab = (props) => {
                                           type="text"
                                           disabled={(props.channelNotVerified || props.isLoading || props.thingSpeakPeriod)}
                                           placeholder="Number of Days"
-                                          isInvalid={props.numDays > 31}
+                                          isInvalid={props.numDays > 90}
                                           required/>
                             <Form.Control.Feedback type="invalid">
-                                Please provide a number less than 31.
+                                Please provide a number less than 90.
                             </Form.Control.Feedback>
                         </Form.Group>
                         <Button variant={!props.channelNotVerified ? 'primary' : 'danger'}

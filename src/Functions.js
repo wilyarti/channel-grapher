@@ -50,7 +50,7 @@ export function randomColor() {
     const {cookies} = this.props;
     const cookie = favoriteColor;
     const date = new Date();
-    cookies.set('favoriteColor', cookie, {expires: new Date(date.getFullYear()+1,date.getMonth(), date.getDay())});
+    cookies.set('favoriteColor', cookie, {expires: new Date(date.getFullYear() + 1, date.getMonth(), date.getDay())});
 }
 
 export function handleDatePicker(date) {
@@ -79,7 +79,8 @@ export function handleDatePicker(date) {
 export function handleTimeZone(timeZone) {
     const {cookies} = this.props;
     const cookie = timeZone;
-    cookies.set('timeZone', cookie);
+    const date = new Date();
+    cookies.set('timeZone', cookie, {expires: new Date(date.getFullYear() + 1, date.getMonth(), date.getDay())});
     this.setState({timeZone}, () => {
         this.refreshClickHandler()
     })
@@ -96,7 +97,7 @@ export function handleThingSpeakFieldID(e) {
     const {cookies} = this.props;
     const cookie = e.target.value;
     const date = new Date();
-    cookies.set('thingSpeakFieldID', cookie, {expires: new Date(date.getFullYear()+1,date.getMonth(), date.getDay())});
+    cookies.set('thingSpeakFieldID', cookie, {expires: new Date(date.getFullYear() + 1, date.getMonth(), date.getDay())});
     const defaultConfig = {
         type: 'line',
         datasets: [{
@@ -127,20 +128,23 @@ export function handleThingSpeakAPIKey(e) {
     const {cookies} = this.props;
     const cookie = e.target.value;
     const date = new Date();
-    cookies.set('thingSpeakAPIKey', cookie, {expires: new Date(date.getFullYear()+1,date.getMonth(), date.getDay())});
+    cookies.set('thingSpeakAPIKey', cookie, {expires: new Date(date.getFullYear() + 1, date.getMonth(), date.getDay())});
     this.setState({channelNotVerified: true, thingSpeakAPIKey: e.target.value});
 }
 
-export function handleNumDays(e)
-{
+export function handleNumDays(e) {
+    console.log(e)
     const re = /^[0-9\b]+$/;
     if (e.target.value === '' || re.test(e.target.value)) {
-        if (this.state.endDate) {
+        let endDate = this.state.endDate
+        if (endDate) {
+            endDate = new Date()
+        }
             const start = moment(this.state.endDate).subtract(e.target.value, "days");
             this.setState({
-                startDate: start, numDays: e.target.value
+                startDate: start, numDays: e.target.value, endDate
             })
-        }
+
     }
 }
 
@@ -294,7 +298,7 @@ export function thingSpeakValidatorClickHandler() {
         .then((responseJson) => {
             console.log(responseJson);
             if (responseJson.success == false) {
-                this.setToast("Error invalid settings.", "Either the settings are invalid or no data matches the time period." + responseJson.toString())
+                this.setToast("Error invalid settings.", `Either the settings are invalid or no data matches the time period. ${responseJson.toString()}`)
                 return
             }
             console.log("Setting states")
@@ -315,8 +319,8 @@ export function thingSpeakValidatorClickHandler() {
             thingSpeakIDList.push(thingSpeakIDCookie);
             thingSpeakIDList = [...new Set(thingSpeakIDList)];
             const date = new Date();
-            cookies.set('thingSpeakID', thingSpeakIDCookie, {expires: new Date(date.getFullYear()+1,date.getMonth(), date.getDay())});
-            cookies.set('thingSpeakIDList', thingSpeakIDList, {expires: new Date(date.getFullYear()+1,date.getMonth(), date.getDay())});
+            cookies.set('thingSpeakID', thingSpeakIDCookie, {expires: new Date(date.getFullYear() + 1, date.getMonth(), date.getDay())});
+            cookies.set('thingSpeakIDList', thingSpeakIDList, {expires: new Date(date.getFullYear() + 1, date.getMonth(), date.getDay())});
             this.setState({channelNotVerified: false, showOptions: true, showChannel: true, thingSpeakIDList})
             this.refreshClickHandler()
         })
@@ -368,6 +372,10 @@ export function refreshClickHandler(dID) {
                 borderWidth: 2,
                 data: [],
             };
+            if (responseJson.map.feeds.myArrayList.length >= 8000) {
+                this.setToast("Too many data points.", "Your query may have exceeded the 8000 point limit and may be incomplete. Choose a smaller time period.")
+
+            }
             for (let i = 0, len = responseJson.map.feeds.myArrayList.length; i < len; i++) {
                 tempConfig.datasets[dataSetID].data.push({
                     x: moment(responseJson.map.feeds.myArrayList[i].map.created_at),
@@ -425,6 +433,7 @@ export function refreshClickHandler(dID) {
         }
     );
 }
+
 export function updateWindowDimensions() {
     this.setState({dimensions: {width: window.innerWidth, height: window.innerHeight - 150}})
 }
