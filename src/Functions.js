@@ -137,14 +137,15 @@ export function handleNumDays(e) {
     const re = /^[0-9\b]+$/;
     if (e.target.value === '' || re.test(e.target.value)) {
         let endDate = this.state.endDate
-        if (endDate) {
+        if (!endDate) {
             endDate = new Date()
         }
-            const start = moment(this.state.endDate).subtract(e.target.value, "days");
-            this.setState({
-                startDate: start, numDays: e.target.value, endDate
-            })
-
+        const start = moment(moment(endDate)).subtract(e.target.value, "days");
+        console.log(start)
+        this.setState({
+            startDate: new Date(start), numDays: e.target.value, endDate
+        })
+        console.log(this.state)
     }
 }
 
@@ -333,7 +334,7 @@ export function thingSpeakValidatorClickHandler() {
 export function refreshClickHandler(dID) {
     // update the timezone to match the new one
     moment.tz.setDefault(this.state.timeZone)
-    this.setState({isLoading: true})
+    //this.setState({isLoading: true})
     let fieldName = "field_".concat(this.state.thingSpeakFieldID)
     if (typeof this.state[fieldName] === "undefined") {
         this.setState({thingSpeakFieldID: 1})
@@ -341,14 +342,14 @@ export function refreshClickHandler(dID) {
     const dataSetID = parseInt(dID) ? parseInt(dID) : 0
     const APIKEY = this.state.thingSpeakAPIKey ? `&api_key=${this.state.thingSpeakAPIKey}` : ''
     const SUM = this.state.dataSummaryInterval ? `&sum=${this.state.dataSummaryInterval}` : ''
-    const START = this.state.startDate ? `&start=${moment(this.state.startDate).format("YYYY-MM-DD")}%2000:00:00` : `&start=${moment(this.state.endDate).subtract(1, "days").format("YYYY-MM-DD")}%2000:00:00`
-    const END = this.state.endDate ? `&end=${moment(this.state.endDate).format("YYYY-MM-DD")}%2023:59:59` : ''
+    const START = this.state.startDate ? `&start=${moment(this.state.startDate).format("YYYY-MM-DDTHH:mm:ssZ")}` : `&start=${moment(this.state.endDate).subtract(1, "days").format("YYYY-MM-DDTHH:mm:ssZ")}`
+    const END = this.state.endDate ? `&end=${moment(this.state.endDate).format("YYYY-MM-DDTHH:mm:ssZ")}` : ''
     const STATUS = `&status=${true}`
     const METADATA = `&metadata=${true}`
     const LOCATION = `&location=${true}`
     const TIMEZONE = `&timezone=${this.state.timeZone}`
     const PERIOD = `&minutes=${this.state.thingSpeakPeriod}`
-    const thingSpeakQuery = JSON.stringify({url: `https://api.thingspeak.com/channels/${this.state.thingSpeakID}/fields/${this.state.thingSpeakFieldID}.json?${APIKEY}${this.state.thingSpeakPeriod ? PERIOD : START + END}${END}${SUM}${STATUS}${METADATA}${LOCATION}${TIMEZONE}`})
+    const thingSpeakQuery = JSON.stringify({url: `https://api.thingspeak.com/channels/${this.state.thingSpeakID}/fields/${this.state.thingSpeakFieldID}.json?${APIKEY}${this.state.thingSpeakPeriod ? PERIOD : START + END}${SUM}${STATUS}${METADATA}${LOCATION}${TIMEZONE}`})
     console.log(thingSpeakQuery)
     fetch('/getJSON', {
         method: 'POST',
@@ -362,19 +363,29 @@ export function refreshClickHandler(dID) {
             console.log(responseJson);
             console.log("Dataset ID: ")
             console.log(dataSetID)
+            const multipleQueries = this.state.multipleQueries
             let tempConfig = this.state.config
-            tempConfig.datasets[dataSetID] = {
-                label: 'Data Summary',
-                fill: true,
-                lineTension: 0,
-                pointRadius: 1.5,
-                borderColor: this.state.favoriteColor ? this.state.favoriteColor : this.state.palette[this.state.config.datasets.length + 1].hex(),
-                borderWidth: 2,
-                data: [],
-            };
+            // zero out our dataset if not fetching multiple queries
+            if (!multipleQueries) {
+                tempConfig.datasets[dataSetID] = {
+                    label: 'Data Summary',
+                    fill: true,
+                    lineTension: 0,
+                    pointRadius: 1.5,
+                    borderColor: this.state.favoriteColor ? this.state.favoriteColor : this.state.palette[this.state.config.datasets.length + 1].hex(),
+                    borderWidth: 2,
+                    data: [],
+                };
+            }
             if (responseJson.map.feeds.myArrayList.length >= 8000) {
                 this.setToast("Too many data points.", "Your query may have exceeded the 8000 point limit and may be incomplete. Choose a smaller time period.")
+                this.setState({endDate: new Date(moment(responseJson.map.feeds.myArrayList[0].map.created_at))})
+                this.setState({multipleQueries: true}, () => {
+                    this.refreshClickHandler()
+                });
 
+            } else {
+                this.setState({multipleQueries: false, endDate: ''})
             }
             for (let i = 0, len = responseJson.map.feeds.myArrayList.length; i < len; i++) {
                 tempConfig.datasets[dataSetID].data.push({

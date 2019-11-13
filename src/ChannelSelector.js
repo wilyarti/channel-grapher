@@ -4,7 +4,6 @@ import React from "react";
 
 
 const ChannelSelector = (props) => {
-console.log(props)
     return (
         <Col xs={10}>
         <Form.Group  controlId="validFieldID">
