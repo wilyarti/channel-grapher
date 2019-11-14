@@ -108,8 +108,8 @@ class App extends Component {
             palette: distinctColors({count: 56}),
             favoriteColor: cookies.get('favoriteColor') || '',
             msgs: [],
-            multipleQueries: false
-
+            multipleQueries: false,
+            finalEntry: ''
         };
         this.handleDatePicker = handleDatePicker.bind(this)
         this.handleTimeZone = handleTimeZone.bind(this)

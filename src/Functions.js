@@ -87,8 +87,6 @@ export function handleTimeZone(timeZone) {
 }
 
 export function handleThingSpeakID(e) {
-    console.log(e);
-    console.log("clicked");
     this.setState({channelNotVerified: true, thingSpeakID: e.target.value});
 }
 
@@ -133,9 +131,21 @@ export function handleThingSpeakAPIKey(e) {
 }
 
 export function handleNumDays(e) {
+
     console.log(e)
     const re = /^[0-9\b]+$/;
     if (e.target.value === '' || re.test(e.target.value)) {
+        const defaultConfig = {
+            type: 'line',
+            datasets: [{
+                label: 'ThingSpeak Channel',
+                fill: true,
+                lineTension: 0,
+                pointRadius: 1,
+                borderColor: this.state.palette[this.state.config.datasets.length + 1].hex(),
+                data: [],
+            }]
+        }
         let endDate = this.state.endDate
         if (!endDate) {
             endDate = new Date()
@@ -143,14 +153,25 @@ export function handleNumDays(e) {
         const start = moment(moment(endDate)).subtract(e.target.value, "days");
         console.log(start)
         this.setState({
-            startDate: new Date(start), numDays: e.target.value, endDate
+            startDate: new Date(start), numDays: e.target.value, endDate, config: defaultConfig
         })
         console.log(this.state)
     }
 }
 
 export function handleThingSpeakPeriod(e) {
-    this.setState({thingSpeakPeriod: e.target.value}, () => {
+    const defaultConfig = {
+        type: 'line',
+        datasets: [{
+            label: 'ThingSpeak Channel',
+            fill: true,
+            lineTension: 0,
+            pointRadius: 1,
+            borderColor: this.state.palette[this.state.config.datasets.length + 1].hex(),
+            data: [],
+        }]
+    }
+    this.setState({thingSpeakPeriod: e.target.value, config: defaultConfig}, () => {
         this.refreshClickHandler()
     })
 }
@@ -195,91 +216,115 @@ export function setDataSummaryIntervalDaily() {
 }
 
 export function convertMSLP() {
-    if (!this.state.convertedMSLP) {
-        let currentFieldName = this.state['field_'.concat(this.state.thingSpeakFieldID)]
-        if (!currentFieldName.toUpperCase().match(/PRESSURE/)) {
-            alert("Selected field is not pressure.")
-            return
-        }
-
-        let temperatureFieldID = 0
-        for (let i = 1; i < 9; i++) {
-            let fieldName = 'field_'.concat(i)
-            if (this.state[fieldName].toUpperCase().match(/TEMPERATURE/)) {
-                temperatureFieldID = i
-            }
-        }
-        if (temperatureFieldID != 0) {
-            this.setState({isLoading: true})
-            const APIKEY = this.state.thingSpeakAPIKey ? `&api_key=${this.state.thingSpeakAPIKey}` : ''
-            const SUM = this.state.dataSummaryInterval ? `&sum=${this.state.dataSummaryInterval}` : ''
-            const START = this.state.startDate ? `&start=${moment(this.state.startDate).format("YYYY-MM-DD")}%2000:00:00` : `&start=${moment(this.state.endDate).subtract(1, "days").format("YYYY-MM-DD")}%2000:00:00`
-            const END = this.state.endDate ? `&end=${moment(this.state.endDate).format("YYYY-MM-DD")}%2023:59:59` : ''
-            const STATUS = `&status=${true}`
-            const METADATA = `&metadata=${true}`
-            const LOCATION = `&location=${true}`
-            const TIMEZONE = `&timezone=${this.state.timeZone}`
-            const PERIOD = `&minutes=${this.state.thingSpeakPeriod}`
-            const thingSpeakQuery = JSON.stringify({url: `https://api.thingspeak.com/channels/${this.state.thingSpeakID}/fields/${temperatureFieldID}.json?${APIKEY}${this.state.thingSpeakPeriod ? PERIOD : START + END}${END}${SUM}${STATUS}${METADATA}${LOCATION}${TIMEZONE}`})
-            console.log(thingSpeakQuery)
-            fetch('/getJSON', {
-                method: 'POST',
-                headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
-                },
-                body: thingSpeakQuery,
-            }).then((response) => response.json())
-                .then((responseJson) => {
-                        let tempConfig = this.state.config
-                        let dataSetID = tempConfig.datasets.length
-                        tempConfig.datasets[dataSetID] = {
-                            label: 'MSLP',
-                            fill: true,
-                            lineTension: 0,
-                            pointRadius: 1,
-                            borderColor: this.state.favoriteColor ? this.state.favoriteColor : this.state.palette[this.state.config.datasets.length + 1].hex(),
-                            data: [],
-                        }
-                        let hFloat
-                        if (!this.state.elevation) {
-                            let x;
-                            x = prompt("Enter Altitude of Sensor Readings:", "0");
-                            hFloat = parseFloat(x);
-                            if (hFloat < 0 || hFloat > 10000) {
-                                alert("Error. Enter a valid number.")
-                            }
-                        } else {
-                            hFloat = this.state.elevation
-                        }
-
-                        for (let j = 0, len = responseJson.map.feeds.myArrayList.length; j < len; j++) {
-                            if (tempConfig.datasets[0].data[j].x.isSame(moment(responseJson.map.feeds.myArrayList[j].map.created_at))) {
-                                let pSeaLevelFloat = 0.0;
-                                const tCelFloat = parseFloat(responseJson.map.feeds.myArrayList[j].map[`field${temperatureFieldID}`])
-                                const pAbsFloat = tempConfig.datasets[0].data[j].y
-                                let fltP1 = Math.pow((1 - ((0.0065 * hFloat) / (tCelFloat + (0.0065 * hFloat) + 273.15))), -5.257)
-                                pSeaLevelFloat = pAbsFloat * fltP1
-                                tempConfig.datasets[dataSetID].data.push({
-                                    x: moment(responseJson.map.feeds.myArrayList[j].map.created_at),
-                                    y: pSeaLevelFloat
-                                })
-                            } else {
-                                console.log("Time differs.")
-                                console.log(`Temp: ${moment(responseJson.map.feeds.myArrayList[j].map.created_at)}`)
-                                console.log(`Pres: ${tempConfig.datasets[0].data[j].x}`)
-                            }
-                        }
-                        this.setState({config: tempConfig, convertedMSLP: true})
-                    }
-                )
-                .catch((error) => {
-                    this.setToast("Error.", "Failed to do sea level pressure conversion.")
-                }).finally(() => (this.setState({isLoading: false})));
-
-        }
-    } else {
+    if (this.state.convertedMSLP) {
         alert("Mean Sea Level Pressure Conversion already performed.")
+        return
+    }
+    let currentFieldName = this.state['field_'.concat(this.state.thingSpeakFieldID)]
+    if (!currentFieldName.toUpperCase().match(/PRESSURE/)) {
+        alert("Selected field is not pressure.")
+        return
+    }
+
+    let temperatureFieldID = 0
+    let pressureFieldID = 0
+    for (let i = 1; i < 9; i++) {
+        let fieldName = 'field_'.concat(i)
+        if (this.state[fieldName].toUpperCase().match(/TEMPERATURE/)) {
+            temperatureFieldID = i
+        }
+        if (this.state[fieldName].toUpperCase().match(/PRESSURE/)) {
+            pressureFieldID = i
+        }
+
+
+    }
+    if (temperatureFieldID !== 0 && pressureFieldID !== 0) {
+        this.setState({isLoading: true})
+        // Do we have an end date? If not default to right now.
+        const timeLine = this.state.endDate ? this.state.endDate : new Date()
+        const APIKEY = this.state.thingSpeakAPIKey ? `&api_key=${this.state.thingSpeakAPIKey}` : ''
+        const SUM = this.state.dataSummaryInterval ? `&sum=${this.state.dataSummaryInterval}` : ''
+        const START = this.state.startDate ? `&start=${moment(this.state.startDate).format("YYYY-MM-DDTHH:mm:ss")}` : `&start=${moment(timeLine).subtract(1, "days").format("YYYY-MM-DDTHH:mm:ss")}`
+        const END = this.state.endDate ? `&end=${moment(this.state.endDate).format("YYYY-MM-DDTHH:mm:ssZ")}` : ''
+        const STATUS = `&status=${true}`
+        const METADATA = `&metadata=${true}`
+        const LOCATION = `&location=${true}`
+        const TIMEZONE = `&timezone=${this.state.timeZone}`
+        const PERIOD = `&minutes=${this.state.thingSpeakPeriod}`
+        const thingSpeakQuery = JSON.stringify({url: `https://api.thingspeak.com/channels/${this.state.thingSpeakID}/feeds.json?${APIKEY}${this.state.thingSpeakPeriod ? PERIOD : START + END}${SUM}${STATUS}${METADATA}${LOCATION}${TIMEZONE}`})
+        console.log(thingSpeakQuery)
+        fetch('/getJSON', {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: thingSpeakQuery,
+        }).then((response) => response.json())
+            .then((responseJson) => {
+                    let tempConfig = this.state.config
+                    const finalEntry = responseJson.map.feeds.myArrayList[responseJson.map.feeds.myArrayList.length - 1].map.entry_id
+
+                    tempConfig.datasets = []
+                    tempConfig.datasets[0] = {
+                        label: 'Pressure',
+                        fill: true,
+                        lineTension: 0,
+                        pointRadius: 1.5,
+                        borderColor: this.state.favoriteColor ? this.state.favoriteColor : this.state.palette[this.state.config.datasets.length + 1].hex(),
+                        borderWidth: 2,
+                        data: [],
+                    };
+                    tempConfig.datasets[1] = {
+                        label: 'MSLP',
+                        fill: true,
+                        lineTension: 0,
+                        pointRadius: 1.5,
+                        borderColor: this.state.palette[this.state.config.datasets.length + 3].hex(),
+                        borderWidth: 2,
+                        data: [],
+                    };
+
+                    let hFloat
+                    if (!this.state.elevation) {
+                        let x;
+                        x = prompt("Enter Altitude of Sensor Readings:", "0");
+                        hFloat = parseFloat(x);
+                        if (hFloat < 0 || hFloat > 10000) {
+                            alert("Error. Enter a valid number.")
+                        }
+                    } else {
+                        hFloat = this.state.elevation
+                    }
+                    if (responseJson.map.feeds.myArrayList.length >= 8000) {
+                        this.setToast("Too many data points.", "MSLP conversion does not support extended queries.")
+                    }
+                    for (let j = 0, len = responseJson.map.feeds.myArrayList.length; j < len; j++) {
+                        // to avoid duplicates enter array as entry_id
+                        let index = finalEntry - responseJson.map.feeds.myArrayList[j].map.entry_id
+                        let pSeaLevelFloat = 0.0;
+                        const tCelFloat = parseFloat(responseJson.map.feeds.myArrayList[index].map[`field${temperatureFieldID}`])
+                        const pAbsFloat = parseFloat(responseJson.map.feeds.myArrayList[index].map[`field${pressureFieldID}`])
+                        let fltP1 = Math.pow((1 - ((0.0065 * hFloat) / (tCelFloat + (0.0065 * hFloat) + 273.15))), -5.257)
+                        pSeaLevelFloat = pAbsFloat * fltP1
+                        tempConfig.datasets[0].data[index] = {
+                            x: moment(responseJson.map.feeds.myArrayList[index].map.created_at),
+                            y: pAbsFloat
+                        }
+                        tempConfig.datasets[1].data[index] = {
+                            x: moment(responseJson.map.feeds.myArrayList[index].map.created_at),
+                            y: pSeaLevelFloat
+                        }
+                    }
+                    this.setState({config: tempConfig, convertedMSLP: true})
+                }
+            )
+            .catch((error) => {
+                console.log(error)
+                this.setToast("Error.", "Failed to do sea level pressure conversion.")
+            }).finally(() => (this.setState({isLoading: false})));
+
     }
 }
 
@@ -322,7 +367,14 @@ export function thingSpeakValidatorClickHandler() {
             const date = new Date();
             cookies.set('thingSpeakID', thingSpeakIDCookie, {expires: new Date(date.getFullYear() + 1, date.getMonth(), date.getDay())});
             cookies.set('thingSpeakIDList', thingSpeakIDList, {expires: new Date(date.getFullYear() + 1, date.getMonth(), date.getDay())});
-            this.setState({channelNotVerified: false, showOptions: true, showChannel: true, thingSpeakIDList})
+            let finalEntry = responseJson.map.feeds.myArrayList[responseJson.map.feeds.myArrayList.length - 1].map.entry_id
+            this.setState({
+                channelNotVerified: false,
+                showOptions: true,
+                showChannel: true,
+                thingSpeakIDList,
+                finalEntry
+            })
             this.refreshClickHandler()
         })
         .catch((error) => {
@@ -334,16 +386,23 @@ export function thingSpeakValidatorClickHandler() {
 export function refreshClickHandler(dID) {
     // update the timezone to match the new one
     moment.tz.setDefault(this.state.timeZone)
-    //this.setState({isLoading: true})
+    let endDate = this.state.endDate
+    if (!this.state.multipleQueries) {
+        this.setState({isLoading: true})
+    } else {
+        endDate  = this.state.tempEndDate ? this.state.tempEndDate : this.state.endDate
+    }
     let fieldName = "field_".concat(this.state.thingSpeakFieldID)
     if (typeof this.state[fieldName] === "undefined") {
         this.setState({thingSpeakFieldID: 1})
     }
+    // Do we have an end date? If not default to right now.
+    const timeLine = this.state.endDate ? this.state.endDate : new Date()
     const dataSetID = parseInt(dID) ? parseInt(dID) : 0
     const APIKEY = this.state.thingSpeakAPIKey ? `&api_key=${this.state.thingSpeakAPIKey}` : ''
     const SUM = this.state.dataSummaryInterval ? `&sum=${this.state.dataSummaryInterval}` : ''
-    const START = this.state.startDate ? `&start=${moment(this.state.startDate).format("YYYY-MM-DDTHH:mm:ssZ")}` : `&start=${moment(this.state.endDate).subtract(1, "days").format("YYYY-MM-DDTHH:mm:ssZ")}`
-    const END = this.state.endDate ? `&end=${moment(this.state.endDate).format("YYYY-MM-DDTHH:mm:ssZ")}` : ''
+    const START = this.state.startDate ? `&start=${moment(this.state.startDate).format("YYYY-MM-DDTHH:mm:ss")}` : `&start=${moment(timeLine).subtract(1, "days").format("YYYY-MM-DDTHH:mm:ss")}`
+    const END = endDate ? `&end=${moment(endDate).format("YYYY-MM-DDTHH:mm:ssZ")}` : ''
     const STATUS = `&status=${true}`
     const METADATA = `&metadata=${true}`
     const LOCATION = `&location=${true}`
@@ -364,6 +423,7 @@ export function refreshClickHandler(dID) {
             console.log("Dataset ID: ")
             console.log(dataSetID)
             const multipleQueries = this.state.multipleQueries
+            const finalEntry = multipleQueries ? this.state.finalEntry :  responseJson.map.feeds.myArrayList[responseJson.map.feeds.myArrayList.length - 1].map.entry_id
             let tempConfig = this.state.config
             // zero out our dataset if not fetching multiple queries
             if (!multipleQueries) {
@@ -379,19 +439,24 @@ export function refreshClickHandler(dID) {
             }
             if (responseJson.map.feeds.myArrayList.length >= 8000) {
                 this.setToast("Too many data points.", "Your query may have exceeded the 8000 point limit and may be incomplete. Choose a smaller time period.")
-                this.setState({endDate: new Date(moment(responseJson.map.feeds.myArrayList[0].map.created_at))})
+                this.setState({tempEndDate: new Date(moment(responseJson.map.feeds.myArrayList[0].map.created_at))})
                 this.setState({multipleQueries: true}, () => {
                     this.refreshClickHandler()
                 });
 
             } else {
-                this.setState({multipleQueries: false, endDate: ''})
+                this.setState({multipleQueries: false})
             }
             for (let i = 0, len = responseJson.map.feeds.myArrayList.length; i < len; i++) {
-                tempConfig.datasets[dataSetID].data.push({
+                // to avoid duplicates enter array as entry_id
+                let index = finalEntry - responseJson.map.feeds.myArrayList[i].map.entry_id
+                if (typeof responseJson.map.feeds.myArrayList[i].map.entry_id === "undefined") {
+                    index = i
+                }
+                tempConfig.datasets[dataSetID].data[index] = {
                     x: moment(responseJson.map.feeds.myArrayList[i].map.created_at),
                     y: parseFloat(responseJson.map.feeds.myArrayList[i].map[`field${this.state.thingSpeakFieldID}`])
-                });
+                }
 
                 // update values
                 if (typeof tempConfig.datasets[dataSetID].min === "undefined" || typeof tempConfig.datasets[dataSetID].max === "undefined") {
@@ -421,7 +486,9 @@ export function refreshClickHandler(dID) {
                 config: tempConfig,
                 key: 'Graph',
                 thingSpeakFieldName: responseJson.map.channel.map["field".concat(this.state.thingSpeakFieldID)],
-                xLabel: xLabel
+                xLabel: xLabel,
+                convertedMSLP: false,
+                finalEntry
             })
             if (responseJson.map.channel.map.latitude) {
                 this.setState({latitude: responseJson.map.channel.map.latitude})
@@ -440,7 +507,11 @@ export function refreshClickHandler(dID) {
         .catch((error) => {
             this.setToast("Error retrieving channel data.", error.toString())
         }).finally(() => {
-            this.setState({isLoading: false});
+            if (!this.state.multipleQueries) {
+                this.setState({isLoading: false, key: "Graph"});
+            } else {
+                this.setState({isLoading: true, key: "Graph"});
+            }
         }
     );
 }
