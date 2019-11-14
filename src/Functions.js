@@ -34,6 +34,12 @@ export function toggleFill() {
     this.setState({config: tempConfig})
 }
 
+export function toggleLiveUpdates() {
+    let liveUpdates = !this.state.liveUpdates
+    console.log(liveUpdates)
+    this.setState({liveUpdates})
+}
+
 export function bubbleGraphSelector() {
     this.setState({lineGraphBoolean: false, barGraphBoolean: false, bubbleGraphBoolean: true})
 }
@@ -390,7 +396,7 @@ export function refreshClickHandler(dID) {
     if (!this.state.multipleQueries) {
         this.setState({isLoading: true})
     } else {
-        endDate  = this.state.tempEndDate ? this.state.tempEndDate : this.state.endDate
+        endDate = this.state.tempEndDate ? this.state.tempEndDate : this.state.endDate
     }
     let fieldName = "field_".concat(this.state.thingSpeakFieldID)
     if (typeof this.state[fieldName] === "undefined") {
@@ -423,7 +429,7 @@ export function refreshClickHandler(dID) {
             console.log("Dataset ID: ")
             console.log(dataSetID)
             const multipleQueries = this.state.multipleQueries
-            const finalEntry = multipleQueries ? this.state.finalEntry :  responseJson.map.feeds.myArrayList[responseJson.map.feeds.myArrayList.length - 1].map.entry_id
+            const finalEntry = multipleQueries ? this.state.finalEntry : responseJson.map.feeds.myArrayList[responseJson.map.feeds.myArrayList.length - 1].map.entry_id
             let tempConfig = this.state.config
             // zero out our dataset if not fetching multiple queries
             if (!multipleQueries) {
@@ -479,14 +485,12 @@ export function refreshClickHandler(dID) {
             tempConfig.datasets[dataSetID].latest_time = moment(responseJson.map.feeds.myArrayList[responseJson.map.feeds.myArrayList.length - 1].map.created_at);
             tempConfig.datasets[dataSetID].latest = parseFloat(responseJson.map.feeds.myArrayList[responseJson.map.feeds.myArrayList.length - 1].map[`field${this.state.thingSpeakFieldID}`]);
 
-            tempConfig.datasets[dataSetID].label = this.state.dataSummaryIntervalDescription ? `${responseJson.map.channel.map.name} ${this.state.dataSummaryIntervalDescription}` : responseJson.map.channel.map.name
-            const startDate = this.state.startDate ? moment(this.state.startDate).format('MMMM Do YYYY, [12:00:00 am]') : moment(this.state.endDate).subtract(1, 'days').format('MMMM Do YYYY, [12:00:00am]')
-            const xLabel = startDate + " to " + moment(this.state.endDate).format('MMMM Do YYYY, [11:59:59 pm]')
+            // set field name
+            tempConfig.datasets[dataSetID].label =  responseJson.map.channel.map["field".concat(this.state.thingSpeakFieldID)] + (this.state.dataSummaryInterval ? this.state.dataSummaryIntervalDescription : '')
             this.setState({
                 config: tempConfig,
                 key: 'Graph',
                 thingSpeakFieldName: responseJson.map.channel.map["field".concat(this.state.thingSpeakFieldID)],
-                xLabel: xLabel,
                 convertedMSLP: false,
                 finalEntry
             })
@@ -512,6 +516,83 @@ export function refreshClickHandler(dID) {
             } else {
                 this.setState({isLoading: true, key: "Graph"});
             }
+        }
+    );
+}
+
+
+export async function getLatestData() {
+    // update the timezone to match the new one
+    moment.tz.setDefault(this.state.timeZone)
+
+    if (!this.state.liveUpdates) {
+        console.log("Live updates disabled.")
+        return
+    }
+    // Do we have an end date? If not default to right now.
+    const APIKEY = this.state.thingSpeakAPIKey ? `&api_key=${this.state.thingSpeakAPIKey}` : ''
+    const thingSpeakQuery = JSON.stringify({url: `https://api.thingspeak.com/channels/${this.state.thingSpeakID}/feeds/last.json?${APIKEY}`})
+    this.setState({isLoading: true})
+    console.log(thingSpeakQuery)
+    fetch('/getJSON', {
+        method: 'POST',
+        headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+        },
+        body: thingSpeakQuery,
+    }).then((response) => response.json())
+        .then((responseJson) => {
+            console.log(responseJson);
+            let tempConfig = this.state.config
+            let finalEntry = this.state.finalEntry
+            if (finalEntry === responseJson.map.entry_id) {
+                console.log("Up to date...")
+                return
+            }
+            if (responseJson.map.entry_id - finalEntry > 1) {
+                this.refreshClickHandler()
+                console.log("Data too out of sync. Re-running sync.")
+                return
+            }
+            finalEntry = responseJson.map.entry_id
+            tempConfig.datasets[0].data.unshift( {
+                x: moment(responseJson.map.created_at),
+                y: parseFloat(responseJson.map[`field${this.state.thingSpeakFieldID}`])
+            })
+            // update values
+            if (typeof tempConfig.datasets[0].min === "undefined" || typeof tempConfig.datasets[0].max === "undefined") {
+                tempConfig.datasets[0].min_time = moment(responseJson.map.created_at);
+                tempConfig.datasets[0].min = parseFloat(responseJson.map[`field${this.state.thingSpeakFieldID}`]);
+                tempConfig.datasets[0].max_time = moment(responseJson.map.created_at);
+                tempConfig.datasets[0].max = parseFloat(responseJson.map[`field${this.state.thingSpeakFieldID}`]);
+
+            }
+            if (parseFloat(responseJson.map[`field${this.state.thingSpeakFieldID}`]) <= tempConfig.datasets[0].min) {
+                tempConfig.datasets[0].min_time = moment(responseJson.map.created_at);
+                tempConfig.datasets[0].min = parseFloat(responseJson.map[`field${this.state.thingSpeakFieldID}`]);
+            }
+            if (parseFloat(responseJson.map[`field${this.state.thingSpeakFieldID}`]) >= tempConfig.datasets[0].max) {
+                tempConfig.datasets[0].max_time = moment(responseJson.map.created_at);
+                tempConfig.datasets[0].max = parseFloat(responseJson.map[`field${this.state.thingSpeakFieldID}`]);
+            }
+            // add latest values
+            tempConfig.datasets[0].latest_time = moment(responseJson.map.created_at);
+            tempConfig.datasets[0].latest = parseFloat(responseJson.map[`field${this.state.thingSpeakFieldID}`]);
+
+            this.setState({
+                config: tempConfig,
+                key: 'Graph',
+                finalEntry,
+            })
+            this.setState({config: tempConfig})
+
+        })
+        .catch((error) => {
+            this.setToast("Error retrieving channel data.", error.toString())
+        }).finally(() => {
+            console.log("Finished update.")
+        this.setState({isLoading: false})
         }
     );
 }

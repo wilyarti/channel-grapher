@@ -10,7 +10,7 @@ const ChartTab = (props) => {
         maintainAspectRatio: false,
         title: {
             display: true,
-            text:  props.thingSpeakFieldName
+            text:  props.channelTitle
         },
         scales: {
             xAxes: [{
@@ -18,7 +18,7 @@ const ChartTab = (props) => {
                 display: true,
                 scaleLabel: {
                     display: true,
-                    labelString: "Time",
+                    labelString: props.xLabel,
                 },
                 ticks: {
                     major: {
@@ -31,7 +31,7 @@ const ChartTab = (props) => {
                 display: true,
                 scaleLabel: {
                     display: true,
-                    labelString: 'Reading'
+                    labelString: props.thingSpeakFieldName
                 }
             }]
         }

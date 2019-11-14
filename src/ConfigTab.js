@@ -42,6 +42,9 @@ const ConfigTab = (props) => {
                             Please provide a valid ThingSpeak API key.
                         </Form.Control.Feedback>
                     </Form.Group>
+                    <Form.Check type="checkbox" label="Live Updates"
+                                checked={props.liveUpdates}
+                                onChange={props.toggleLiveUpdates}/>
                     <Button variant="primary" disabled={props.isLoading}
                             onClick={!props.isLoading ? props.thingSpeakValidatorClickHandler : null}>
                         {props.isLoading ? <Spinner

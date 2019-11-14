@@ -21,7 +21,8 @@
     "react-moment": "^0.9.2",
     "react-native-vector-icons": "^6.6.0",
     "react-scripts": "0.9.5",
-    "react-timezone-picker": "^1.0.8"
+    "react-timezone-picker": "^1.0.8",
+    "prop-types": "latest"
   },
   "devDependencies": {},
   "scripts": {

@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import  React, {InteractionManager, Component} from 'react';
 import {instanceOf} from 'prop-types';
 
 
@@ -45,7 +45,9 @@ import {
     setToast,
     thingSpeakValidatorClickHandler,
     toggleFill,
-    updateWindowDimensions
+    updateWindowDimensions,
+    toggleLiveUpdates,
+    getLatestData
 } from "./Functions";
 import ChartFunctionsMenu from "./ChartFunctionsMenu";
 
@@ -109,7 +111,8 @@ class App extends Component {
             favoriteColor: cookies.get('favoriteColor') || '',
             msgs: [],
             multipleQueries: false,
-            finalEntry: ''
+            finalEntry: '',
+            liveUpdates: false
         };
         this.handleDatePicker = handleDatePicker.bind(this)
         this.handleTimeZone = handleTimeZone.bind(this)
@@ -132,15 +135,18 @@ class App extends Component {
         this.convertMSLP = convertMSLP.bind(this)
         this.closeToast = closeToast.bind(this)
         this.setToast = setToast.bind(this)
+        this.toggleLiveUpdates = toggleLiveUpdates.bind(this)
+        this.getLatestData = getLatestData.bind(this)
     }
 
-    componentDidMount() {
+     componentDidMount() {
         const {cookies} = this.props;
         if (cookies.get('thingSpeakID')) {
             this.thingSpeakValidatorClickHandler();
         }
         this.updateWindowDimensions();
         window.addEventListener('resize', this.updateWindowDimensions);
+         this.timer = setInterval(()=> this.getLatestData(), 15000)
     }
 
     componentWillUnmount() {
@@ -159,9 +165,11 @@ class App extends Component {
             }
         })
 
+        const xLabel = (this.state.config.datasets[0].data.length > 0) ? moment(this.state.config.datasets[0].data[this.state.config.datasets[0].data.length -1].x).format("MMM DD, YYYY HH:mm:ss a") + " to " + moment(this.state.config.datasets[0].data[0].x).format("MMM DD, YYYY HH:mm:ss a") : "Time"
+
         const minMaxLatest = this.state.config.datasets.map((_, index) => {
             return (
-                <Row>
+                <Row key={index}>
                     {((typeof this.state.config.datasets[index].min !== "undefined") && this.state.config.datasets[index].min_time) &&
                     <Col xs={4}>
                         <span><TrendingDown/></span>
@@ -215,6 +223,7 @@ class App extends Component {
                     activeKey={this.state.key}
                     size="sm"
                     onSelect={key => this.setState({key})}
+                    style={{outline: 'none'}}
                 >
                     <Tab eventKey="Graph"
                          title={<span> <BarChart2 size={(this.state.key === "Graph") ? 30 : 24}/> {(this.state.isLoading && !this.state.channelNotVerified) ?
@@ -256,6 +265,8 @@ class App extends Component {
                                   channelNotVerified={this.state.channelNotVerified}
                                   thingSpeakFieldName={this.state.thingSpeakFieldName}
                                   config={this.state.config}
+                                  channelTitle={this.state.channelTitle}
+                                  xLabel={xLabel}
                         />
                         {minMaxLatest}
                     </Tab>
@@ -286,6 +297,7 @@ class App extends Component {
                                    refreshClickHandler={this.refreshClickHandler}
                                    thingSpeakPeriod={this.thingSpeakPeriod}
                                    handleThingSpeakPeriod={this.handleThingSpeakPeriod}
+                                   toggleLiveUpdates={this.toggleLiveUpdates}
                         />
                     </Tab>
                     <Tab eventKey="Info"
