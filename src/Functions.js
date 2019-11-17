@@ -374,12 +374,22 @@ export function thingSpeakValidatorClickHandler() {
             cookies.set('thingSpeakID', thingSpeakIDCookie, {expires: new Date(date.getFullYear() + 1, date.getMonth(), date.getDay())});
             cookies.set('thingSpeakIDList', thingSpeakIDList, {expires: new Date(date.getFullYear() + 1, date.getMonth(), date.getDay())});
             let finalEntry = responseJson.map.feeds.myArrayList[responseJson.map.feeds.myArrayList.length - 1].map.entry_id
+
+            // find timezone
+            let geo
+            console.log(responseJson.map.channel.map.latitude)
+            console.log(responseJson.map.channel.map.longitude)
+            if (responseJson.map.channel.map.latitude !== 0 && responseJson.map.channel.map.longitude !== 0) {
+                geo = this.tz_lookup(responseJson.map.channel.map.latitude,responseJson.map.channel.map.longitude)
+            }
+            console.log(geo)
             this.setState({
                 channelNotVerified: false,
                 showOptions: true,
                 showChannel: true,
                 thingSpeakIDList,
-                finalEntry
+                finalEntry,
+                timeZone: geo
             })
             this.refreshClickHandler()
         })

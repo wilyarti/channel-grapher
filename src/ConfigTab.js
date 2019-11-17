@@ -71,8 +71,9 @@ const ConfigTab = (props) => {
                             <TimezonePicker
                                 absolute={false}
                                 disabled={(props.channelNotVerified || props.isLoading)}
-                                defaultValue={props.timeZone}
-                                placeholder="Change timezone..."
+                              //  defaultValue={props.timeZone}
+                                value={props.timeZone}
+                              placeholder="Change timezone..."
                                 onChange={props.handleTimeZone}
                             />
                         </Form.Group>

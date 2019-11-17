@@ -52,6 +52,7 @@ import {
 import ChartFunctionsMenu from "./ChartFunctionsMenu";
 
 const distinctColors = require('distinct-colors')
+const tz_lookup = require("tz-lookup");
 
 class App extends Component {
     static propTypes = {
@@ -137,16 +138,27 @@ class App extends Component {
         this.setToast = setToast.bind(this)
         this.toggleLiveUpdates = toggleLiveUpdates.bind(this)
         this.getLatestData = getLatestData.bind(this)
+        this.tz_lookup = tz_lookup.bind(this)
+
     }
 
      componentDidMount() {
-        const {cookies} = this.props;
-        if (cookies.get('thingSpeakID')) {
-            this.thingSpeakValidatorClickHandler();
-        }
-        this.updateWindowDimensions();
-        window.addEventListener('resize', this.updateWindowDimensions);
+         this.updateWindowDimensions();
+         window.addEventListener('resize', this.updateWindowDimensions);
          this.timer = setInterval(()=> this.getLatestData(), 15000)
+
+         // get url parameters
+         const windowUrl = window.location.search;
+         const params = new URLSearchParams(windowUrl);
+        if(params.get('id')) {
+            this.setState({thingSpeakID: params.get('id')}, () => {this.thingSpeakValidatorClickHandler()})
+        } else {
+            const {cookies} = this.props;
+            if (cookies.get('thingSpeakID')) {
+                this.thingSpeakValidatorClickHandler();
+            }
+        }
+
     }
 
     componentWillUnmount() {
@@ -298,6 +310,7 @@ class App extends Component {
                                    thingSpeakPeriod={this.thingSpeakPeriod}
                                    handleThingSpeakPeriod={this.handleThingSpeakPeriod}
                                    toggleLiveUpdates={this.toggleLiveUpdates}
+                                   timeZone={this.state.timeZone}
                         />
                     </Tab>
                     <Tab eventKey="Info"
