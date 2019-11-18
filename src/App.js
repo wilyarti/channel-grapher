@@ -1,4 +1,4 @@
-import  React, {InteractionManager, Component} from 'react';
+import React, {Component} from 'react';
 import {instanceOf} from 'prop-types';
 
 
@@ -29,6 +29,7 @@ import {
     bubbleGraphSelector,
     closeToast,
     convertMSLP,
+    getLatestData,
     handleDatePicker,
     handleNumDays,
     handleThingSpeakAPIKey,
@@ -45,9 +46,8 @@ import {
     setToast,
     thingSpeakValidatorClickHandler,
     toggleFill,
-    updateWindowDimensions,
     toggleLiveUpdates,
-    getLatestData
+    updateWindowDimensions
 } from "./Functions";
 import ChartFunctionsMenu from "./ChartFunctionsMenu";
 
