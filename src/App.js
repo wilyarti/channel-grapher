@@ -16,6 +16,7 @@ import Spinner from 'react-bootstrap/Spinner';
 import moment from 'moment-timezone';
 import {Activity, BarChart2, HelpCircle, Info, Settings, TrendingDown, TrendingUp} from 'react-feather';
 import {Cookies, withCookies} from 'react-cookie';
+
 /**
  * Tab contents and functions.
  */
