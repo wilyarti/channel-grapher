@@ -22,3 +22,33 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: white;
+  padding: 20px;
+}
+
+.Demo__some-network {
+  vertical-align: top;
+  display: inline-block;
+  margin-right: 15px;
+  text-align: center;
+}
+
+.Demo__some-network__share-count {
+  margin-top: 3px;
+  font-size: 12px;
+}
+
+.Demo__some-network__share-button {
+  cursor: pointer;
+}
+
+.Demo__some-network__share-button:hover:not(:active) {
+  opacity: 0.75;
+}
+
+.Demo__some-network__custom-icon {
+  width:32px;
+  height:32px;
+}

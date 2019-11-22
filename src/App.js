@@ -17,6 +17,7 @@ import moment from 'moment-timezone';
 import {Activity, BarChart2, HelpCircle, Info, Settings, TrendingDown, TrendingUp} from 'react-feather';
 import {Cookies, withCookies} from 'react-cookie';
 
+
 /**
  * Tab contents and functions.
  */
@@ -51,6 +52,7 @@ import {
     updateWindowDimensions
 } from "./Functions";
 import ChartFunctionsMenu from "./ChartFunctionsMenu";
+import Share from "./Share";
 
 const distinctColors = require('distinct-colors')
 const tz_lookup = require("tz-lookup");
@@ -143,28 +145,38 @@ class App extends Component {
 
     }
 
-     componentDidMount() {
-         this.updateWindowDimensions();
-         window.addEventListener('resize', this.updateWindowDimensions);
-         this.timer = setInterval(()=> this.getLatestData(), 15000)
+    componentDidMount() {
+        this.updateWindowDimensions();
+        window.addEventListener('resize', this.updateWindowDimensions);
+        this.timer = setInterval(() => this.getLatestData(), 15000)
 
-         // get url parameters
-         const windowUrl = window.location.search;
-         const params = new URLSearchParams(windowUrl);
-        if(params.get('id')) {
-            this.setState({thingSpeakID: params.get('id')}, () => {this.thingSpeakValidatorClickHandler()})
-        } else {
-            const {cookies} = this.props;
-            if (cookies.get('thingSpeakID')) {
-                this.thingSpeakValidatorClickHandler();
-            }
+        // get url parameters
+        const windowUrl = window.location.search;
+        const params = new URLSearchParams(windowUrl)
+        if (params.get('startDate')) {
+            this.setState({startDate: params.get('startDate')})
         }
+        if (params.get('endDate')) {
+            this.setState({endDate: params.get('endDate')})
+        }
+        if (params.get)
+            if (params.get('id')) {
+                this.setState({thingSpeakID: params.get('id')}, () => {
+                    this.thingSpeakValidatorClickHandler()
+                })
+            } else {
+                const {cookies} = this.props;
+                if (cookies.get('thingSpeakID')) {
+                    this.thingSpeakValidatorClickHandler();
+                }
+            }
 
     }
 
     componentWillUnmount() {
         window.removeEventListener('resize', this.updateWindowDimensions);
     }
+
     render() {
         const thingSpeakIDs = this.state.thingSpeakIDList;
         const thingSpeakIDList = thingSpeakIDs.map((id) => {
@@ -178,7 +190,7 @@ class App extends Component {
             }
         })
 
-        const xLabel = (this.state.config.datasets[0].data.length > 0) ? moment(this.state.config.datasets[0].data[this.state.config.datasets[0].data.length -1].x).format("MMM DD, YYYY HH:mm:ss a") + " to " + moment(this.state.config.datasets[0].data[0].x).format("MMM DD, YYYY HH:mm:ss a") : "Time"
+        const xLabel = (this.state.config.datasets[0].data.length > 0) ? moment(this.state.config.datasets[0].data[this.state.config.datasets[0].data.length - 1].x).format("MMM DD, YYYY HH:mm:ss a") + " to " + moment(this.state.config.datasets[0].data[0].x).format("MMM DD, YYYY HH:mm:ss a") : "Time"
 
         const minMaxLatest = this.state.config.datasets.map((_, index) => {
             return (
@@ -239,7 +251,8 @@ class App extends Component {
                     style={{outline: 'none'}}
                 >
                     <Tab eventKey="Graph"
-                         title={<span> <BarChart2 size={(this.state.key === "Graph") ? 30 : 24}/> {(this.state.isLoading && !this.state.channelNotVerified) ?
+                         title={<span> <BarChart2
+                             size={(this.state.key === "Graph") ? 30 : 24}/> {(this.state.isLoading && !this.state.channelNotVerified) ?
                              <Spinner
                                  as="span"
                                  animation="grow"
@@ -264,12 +277,14 @@ class App extends Component {
                                                     setDataSummaryIntervalDaily={this.setDataSummaryIntervalDaily}
                                 />
                             </Col>
-                            <ChannelSelector isLoading={this.state.isLoading}
-                                             channelNotVerified={this.state.channelNotVerified}
-                                             thingSpeakFieldID={this.state.thingSpeakFieldID}
-                                             handleThingSpeakFieldID={this.handleThingSpeakFieldID}
-                                             optionItems={optionItems}
-                            />
+                            <Col>
+                                <ChannelSelector isLoading={this.state.isLoading}
+                                                 channelNotVerified={this.state.channelNotVerified}
+                                                 thingSpeakFieldID={this.state.thingSpeakFieldID}
+                                                 handleThingSpeakFieldID={this.handleThingSpeakFieldID}
+                                                 optionItems={optionItems}
+                                />
+                            </Col>
                         </Row>
                         <ChartTab dimensions={this.state.dimensions}
                                   lineGraphBoolean={this.state.lineGraphBoolean}
@@ -285,7 +300,8 @@ class App extends Component {
                     </Tab>
 
                     <Tab eventKey="Config"
-                         title={<span><Settings size={(this.state.key === "Config") ? 30 : 24}/> {(this.state.isLoading && this.state.channelNotVerified) ?
+                         title={<span><Settings
+                             size={(this.state.key === "Config") ? 30 : 24}/> {(this.state.isLoading && this.state.channelNotVerified) ?
                              <Spinner
                                  as="span"
                                  animation="grow"
@@ -327,6 +343,7 @@ class App extends Component {
                             channelDescription={this.state.channelDescription}
                             metadata={this.state.metadata}
                         />
+                        <Share url="/foo" name="foo" image='https://opens3.net/channel-grapher?id=' size={24}/>
                     </Tab>
                     <Tab eventKey="Help"
                          title={<span> <HelpCircle size={(this.state.key === "Help") ? 30 : 24}/> </span>}>

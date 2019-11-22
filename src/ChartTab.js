@@ -3,7 +3,6 @@ import {Bar, Bubble, Line} from "react-chartjs-2";
 import Row from "react-bootstrap/Row";
 import React from "react";
 
-
 const ChartTab = (props) => {
     const chartOptions = {
         responsive: true,

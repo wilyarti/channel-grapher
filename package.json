@@ -24,6 +24,7 @@
     "react-native-vector-icons": "^6.6.0",
     "react-router-dom": "^5.1.2",
     "react-scripts": "0.9.5",
+    "react-share": "^3.0.1",
     "react-timezone-picker": "^1.0.8"
   },
   "devDependencies": {
