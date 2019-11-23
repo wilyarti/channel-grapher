@@ -75,7 +75,7 @@ export function handleDatePicker(date) {
     // reset graph to line
     this.lineGraphSelector()
     const numDays = this.state.numDays ? this.state.numDays : 1
-    const start = moment(date).subtract(numDays, "days");
+    const start = new Date(moment(date).subtract(numDays, "days"));
     this.setState({
         startDate: start, endDate: date, config: defaultConfig, dataSetID: 0, dataSummaryInterval: 0,
         dataSummaryIntervalDescription: ''
@@ -156,10 +156,10 @@ export function handleNumDays(e) {
         if (!endDate) {
             endDate = new Date()
         }
-        const start = moment(moment(endDate)).subtract(e.target.value, "days");
+        const start = new Date(moment(endDate).subtract(e.target.value, "days"));
         console.log(start)
         this.setState({
-            startDate: new Date(start), numDays: e.target.value, endDate, config: defaultConfig
+            startDate: start, numDays: e.target.value, endDate, config: defaultConfig
         })
         console.log(this.state)
     }

@@ -14,10 +14,8 @@ import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 import Spinner from 'react-bootstrap/Spinner';
 import moment from 'moment-timezone';
-import {Activity, BarChart2, HelpCircle, Info, Settings, TrendingDown, TrendingUp} from 'react-feather';
+import {Activity, BarChart2, HelpCircle, Info, Settings, Share2, TrendingDown, TrendingUp} from 'react-feather';
 import {Cookies, withCookies} from 'react-cookie';
-
-
 /**
  * Tab contents and functions.
  */
@@ -91,7 +89,7 @@ class App extends Component {
             thingSpeakID: cookies.get('thingSpeakID') || '645847',
             thingSpeakIDList: cookies.get('thingSpeakIDList') || [],
             thingSpeakAPIKey: cookies.get('thingSpeakAPIKey') || '',
-            thingSpeakFieldID: cookies.get('thingSpeakFieldID') || '1',
+            thingSpeakFieldID: 1, //cookies.get('thingSpeakFieldID') || '1',
             thingSpeakFieldName: 'sensor',
             thingSpeakPeriod: '',
             xLabel: 'time',
@@ -153,11 +151,17 @@ class App extends Component {
         // get url parameters
         const windowUrl = window.location.search;
         const params = new URLSearchParams(windowUrl)
+        console.log("---- PARAMS ----")
+        console.log(params.get('startDate'))
+        console.log(params.get('endDate'))
         if (params.get('startDate')) {
-            this.setState({startDate: params.get('startDate')})
+            this.setState({startDate: new Date(moment(params.get('startDate')))})
         }
         if (params.get('endDate')) {
-            this.setState({endDate: params.get('endDate')})
+            this.setState({endDate: new Date(moment(params.get('endDate')))})
+        }
+        if (params.get('fieldID')) {
+            this.setState({thingSpeakFieldID: params.get('fieldID')})
         }
         if (params.get)
             if (params.get('id')) {
@@ -232,7 +236,13 @@ class App extends Component {
                 </Toast>
             )
         });
-
+        const firstEntry = (this.state.config.datasets[0].data.length > 0) ? this.state.config.datasets[0].data[this.state.config.datasets[0].data.length - 1].x.toISOString() : ''
+        const lastEntry = (this.state.config.datasets[0].data.length > 0) ? this.state.config.datasets[0].data[length].x.toISOString() : ''
+        const thingSpeakID = this.state.thingSpeakID ? `id=${this.state.thingSpeakID}` : ''
+        const fieldID = this.state.thingSpeakFieldID ? `&fieldID=${this.state.thingSpeakFieldID}` : ''
+        const startDate = firstEntry ? `&startDate=${firstEntry}` : ''
+        const endDate = lastEntry ? `&endDate=${lastEntry}` : ''
+        const urlBuilder = encodeURI(`https://opens3.net/channel-grapher.html?${thingSpeakID}${fieldID}${startDate}${endDate}`)
         return (
             <Container fluid>
                 <div style={{
@@ -251,6 +261,7 @@ class App extends Component {
                     style={{outline: 'none'}}
                 >
                     <Tab eventKey="Graph"
+                         disabled={(this.state.channelNotVerified || this.state.isLoading)}
                          title={<span> <BarChart2
                              size={(this.state.key === "Graph") ? 30 : 24}/> {(this.state.isLoading && !this.state.channelNotVerified) ?
                              <Spinner
@@ -332,8 +343,9 @@ class App extends Component {
                     </Tab>
                     <Tab eventKey="Info"
                          disabled={(this.state.channelNotVerified || this.state.isLoading)}
-                         title={<span> <Info size={(this.state.key === "Info") ? 30 : 24}/> </span>}>
+                         title={<span> <Share2 size={(this.state.key === "Info") ? 30 : 24}/> </span>}>
                         <br/>
+                        <h3>Info</h3>
                         <InfoTab
                             isLoading={this.state.isLoading}
                             latitude={this.state.latitude}
@@ -343,7 +355,10 @@ class App extends Component {
                             channelDescription={this.state.channelDescription}
                             metadata={this.state.metadata}
                         />
-                        <Share url="/foo" name="foo" image='https://opens3.net/channel-grapher?id=' size={24}/>
+                        <h3>Share</h3>
+                        Share this channel including the date range and the selected field.
+                        <Share url={urlBuilder} name={this.state.channelTitle} image='https://opens3.net/favicon.png'
+                               size={24}/>
                     </Tab>
                     <Tab eventKey="Help"
                          title={<span> <HelpCircle size={(this.state.key === "Help") ? 30 : 24}/> </span>}>

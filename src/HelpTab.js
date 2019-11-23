@@ -1,4 +1,4 @@
-import {BarChart2, Info, Settings} from "react-feather";
+import {BarChart2, Settings, Share2} from "react-feather";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import React from "react";
@@ -12,7 +12,7 @@ const HelpTab = () => {
                     devices which use a service called ThingSpeak.<br/>
                     ThingSpeak is a free to use web platform for time series data from sensors.
                     <p/>
-                    I built this web app to draw graphs from my weather stations that I built. I have one in
+                    I built this web app to draw graphs for my weather stations that I built. I have one in
                     Broome and one in Emerald.
                     <p/>
                     <img className="img-fluid"
@@ -28,7 +28,7 @@ const HelpTab = () => {
                     <h3>Instructions</h3>
                     <ol>
                         <li>Click on the <Settings/> icon and enter your ThingSpeak ID and API read key into
-                            the fields.
+                            the fields (if your channel is private).
                         </li>
                         <li>Click on the "Load Channel" button. If your setting are valid the app will
                             automatically switch to the <BarChart2/> tab and draw the first field.
@@ -42,7 +42,7 @@ const HelpTab = () => {
                             Data summary is very useful for things such as rainfall.
                         </li>
                         <li>To view the channel's metadata such as location, altitude etc. Click on
-                            the <Info/> tab.
+                            the <Share2/> tab. You can also share the channel, field and time range you are viewing with friends.
                         </li>
                         <li>Gray tabs are disabled because there is no data loaded for them to display. Load
                             a channel to view these tabs.

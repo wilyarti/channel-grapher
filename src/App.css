@@ -28,27 +28,27 @@ body {
   padding: 20px;
 }
 
-.Demo__some-network {
+.opens3-share {
   vertical-align: top;
   display: inline-block;
   margin-right: 15px;
   text-align: center;
 }
 
-.Demo__some-network__share-count {
+.opens3-share-count {
   margin-top: 3px;
   font-size: 12px;
 }
 
-.Demo__some-network__share-button {
+.opens3-share-button {
   cursor: pointer;
 }
 
-.Demo__some-network__share-button:hover:not(:active) {
+.opens3-share-button:hover:not(:active) {
   opacity: 0.75;
 }
 
-.Demo__some-network__custom-icon {
+.opens3-custom-icon {
   width:32px;
   height:32px;
 }
