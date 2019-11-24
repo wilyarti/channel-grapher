@@ -4,6 +4,7 @@ This is a responsive ThingSpeak API grapher. It uses a JSON router to overcome C
 Built using ReactJS, Bootstrap and ChartJS.
 
 Use this app here: https://opens3.net/channel-grapher.html
+
 Browser international weather stations here:  https://opens3.net/channel-browser.html
 
 
