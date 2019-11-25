@@ -16,6 +16,9 @@ import Spinner from 'react-bootstrap/Spinner';
 import moment from 'moment-timezone';
 import {Activity, BarChart2, HelpCircle, Info, Settings, Share2, TrendingDown, TrendingUp} from 'react-feather';
 import {Cookies, withCookies} from 'react-cookie';
+import distinctColors from 'distinct-colors';
+import TZLookup from 'tz-lookup';
+
 /**
  * Tab contents and functions.
  */
@@ -52,8 +55,6 @@ import {
 import ChartFunctionsMenu from "./ChartFunctionsMenu";
 import Share from "./Share";
 
-const distinctColors = require('distinct-colors')
-const tz_lookup = require("tz-lookup");
 
 class App extends Component {
     static propTypes = {
@@ -139,21 +140,22 @@ class App extends Component {
         this.setToast = setToast.bind(this)
         this.toggleLiveUpdates = toggleLiveUpdates.bind(this)
         this.getLatestData = getLatestData.bind(this)
-        this.tz_lookup = tz_lookup.bind(this)
+        this.tz_lookup = TZLookup.bind(this)
 
     }
 
     componentDidMount() {
+        // Get our windows dimensions and use it to size the Div that contains our graph.
+        // If you size the graph directly it will continue to enlarge and act strange during scroll events.
         this.updateWindowDimensions();
         window.addEventListener('resize', this.updateWindowDimensions);
+
+        // Run out getLatestData() function from the beginning. It will only fire if the liveUpdates is not false.
         this.timer = setInterval(() => this.getLatestData(), 15000)
 
-        // get url parameters
+        // Get URL parameters. These allow graph to be shared or to open up graphs from Channel Browser.
         const windowUrl = window.location.search;
         const params = new URLSearchParams(windowUrl)
-        console.log("---- PARAMS ----")
-        console.log(params.get('startDate'))
-        console.log(params.get('endDate'))
         if (params.get('startDate')) {
             this.setState({startDate: new Date(moment(params.get('startDate')))})
         }
@@ -165,10 +167,12 @@ class App extends Component {
         }
         if (params.get)
             if (params.get('id')) {
+                // If we have an ID. Run the graph.
                 this.setState({thingSpeakID: params.get('id')}, () => {
                     this.thingSpeakValidatorClickHandler()
                 })
             } else {
+                // Else if we have a cookie run that.
                 const {cookies} = this.props;
                 if (cookies.get('thingSpeakID')) {
                     this.thingSpeakValidatorClickHandler();
@@ -223,6 +227,7 @@ class App extends Component {
                 </Row>
             )
         })
+        // These are the Toast messages. They auto timeout.
         const messages = this.state.msgs;
         const msgList = messages.map((_, index) => {
             return (
@@ -236,6 +241,7 @@ class App extends Component {
                 </Toast>
             )
         });
+        // This is for sharing graphs. It grabs the first and last entries in the graph and converts them to ISO as other types cannot be sent in a URL.
         const firstEntry = (this.state.config.datasets[0].data.length > 0) ? this.state.config.datasets[0].data[this.state.config.datasets[0].data.length - 1].x.toISOString() : ''
         const lastEntry = (this.state.config.datasets[0].data.length > 0) ? this.state.config.datasets[0].data[length].x.toISOString() : ''
         const thingSpeakID = this.state.thingSpeakID ? `id=${this.state.thingSpeakID}` : ''
@@ -245,6 +251,7 @@ class App extends Component {
         const urlBuilder = encodeURI(`https://opens3.net/channel-grapher.html?${thingSpeakID}${fieldID}${startDate}${endDate}`)
         return (
             <Container fluid>
+                // This allow the notifications to float above everything else including forms.
                 <div style={{
                     position: 'fixed',
                     top: 1,
