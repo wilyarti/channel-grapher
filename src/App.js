@@ -251,7 +251,6 @@ class App extends Component {
         const urlBuilder = encodeURI(`https://opens3.net/channel-grapher.html?${thingSpeakID}${fieldID}${startDate}${endDate}`)
         return (
             <Container fluid>
-                // This allow the notifications to float above everything else including forms.
                 <div style={{
                     position: 'fixed',
                     top: 1,

@@ -394,7 +394,7 @@ export function thingSpeakValidatorClickHandler() {
             this.refreshClickHandler()
         })
         .catch((error) => {
-            this.setToast("Error accessing channel.", error.toString());
+            this.setToast("Error", "Unable to retrieve data.");
             console.log(error);
         }).finally(() => (this.setState({isLoading: false})));
 }
