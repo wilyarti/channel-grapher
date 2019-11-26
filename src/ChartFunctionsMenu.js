@@ -1,5 +1,5 @@
 import Dropdown from "react-bootstrap/Dropdown";
-import {Sliders} from "react-feather";
+import {CheckSquare, Sliders} from "react-feather";
 import React from "react";
 
 const ChartFunctionsMenu = (props) => {
@@ -11,13 +11,13 @@ const ChartFunctionsMenu = (props) => {
 
             <Dropdown.Menu>
                 <Dropdown.Item
-                    onClick={!(props.channelNotVerified || props.isLoading) ? props.barGraphSelector : null}>Bar
+                    onClick={!(props.channelNotVerified || props.isLoading) ? props.barGraphSelector : null}>{props.barGraphBoolean && <CheckSquare/>} Bar
                     Graph</Dropdown.Item>
                 <Dropdown.Item
-                    onClick={!(props.channelNotVerified || props.isLoading) ? props.bubbleGraphSelector : null}>Bubble
+                    onClick={!(props.channelNotVerified || props.isLoading) ? props.bubbleGraphSelector : null}>{props.bubbleGraphBoolean && <CheckSquare/>} Bubble
                     Graph</Dropdown.Item>
                 <Dropdown.Item
-                    onClick={!(props.channelNotVerified || props.isLoading) ? props.lineGraphSelector : null}>Line
+                    onClick={!(props.channelNotVerified || props.isLoading) ? props.lineGraphSelector : null}>{props.lineGraphBoolean && <CheckSquare/>} Line
                     Graph</Dropdown.Item>
                 <Dropdown.Item
                     onClick={!(props.channelNotVerified || props.isLoading) ? props.toggleFill : null}>Toggle
@@ -31,13 +31,13 @@ const ChartFunctionsMenu = (props) => {
                     onClick={!(props.channelNotVerified || props.isLoading) ? props.convertMSLP : null}>Convert
                     to Mean Sea Level Pressure</Dropdown.Item>
                 <Dropdown.Item
-                    onClick={!(props.channelNotVerified || props.isLoading) ? props.setDataSummaryInterval30 : null}>Summarise
+                    onClick={!(props.channelNotVerified || props.isLoading) ? props.setDataSummaryInterval30 : null}>{props.dataSummaryInterval === 30 && <CheckSquare/>} Summarise
                     Data (30min)</Dropdown.Item>
                 <Dropdown.Item
-                    onClick={!(props.channelNotVerified || props.isLoading) ? props.setDataSummaryInterval60 : null}>Summarise
+                    onClick={!(props.channelNotVerified || props.isLoading) ? props.setDataSummaryInterval60 : null}>{props.dataSummaryInterval === 60 && <CheckSquare/>} Summarise
                     Data (60min)</Dropdown.Item>
                 <Dropdown.Item
-                    onClick={!(props.channelNotVerified || props.isLoading) ? props.setDataSummaryIntervalDaily : null}>Summarise
+                    onClick={!(props.channelNotVerified || props.isLoading) ? props.setDataSummaryIntervalDaily : null}>{props.dataSummaryInterval === "daily" && <CheckSquare/>} Summarise
                     Data (daily)</Dropdown.Item>
             </Dropdown.Menu>
         </Dropdown>

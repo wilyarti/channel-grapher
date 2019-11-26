@@ -292,6 +292,10 @@ class App extends Component {
                                                     setDataSummaryInterval30={this.setDataSummaryInterval30}
                                                     setDataSummaryInterval60={this.setDataSummaryInterval60}
                                                     setDataSummaryIntervalDaily={this.setDataSummaryIntervalDaily}
+                                                    lineGraphBoolean={this.state.lineGraphBoolean}
+                                                    barGraphBoolean={this.state.barGraphBoolean}
+                                                    bubbleGraphBoolean={this.state.bubbleGraphBoolean}
+                                                    dataSummaryInterval={this.state.dataSummaryInterval}
                                 />
                             </Col>
                             <Col>
