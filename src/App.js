@@ -39,6 +39,8 @@ import {
     handleThingSpeakFieldID,
     handleThingSpeakID,
     handleThingSpeakPeriod,
+    handleThingSpeakPeriodSummary,
+    handleThingSpeakPeriodType,
     handleTimeZone,
     lineGraphSelector,
     randomColor,
@@ -93,6 +95,8 @@ class App extends Component {
             thingSpeakFieldID: 1, //cookies.get('thingSpeakFieldID') || '1',
             thingSpeakFieldName: 'sensor',
             thingSpeakPeriod: '',
+            thingSpeakPeriodSummary: '',
+            thingSpeakPeriodType: '',
             xLabel: 'time',
             startDate: '',
             //endDate: new Date(), // Don't set as we will not get the latest data without page reload.
@@ -125,6 +129,9 @@ class App extends Component {
         this.handleThingSpeakFieldID = handleThingSpeakFieldID.bind(this)
         this.handleThingSpeakAPIKey = handleThingSpeakAPIKey.bind(this)
         this.handleThingSpeakPeriod = handleThingSpeakPeriod.bind(this)
+        this.handleThingSpeakPeriodType = handleThingSpeakPeriodType.bind(this)
+        this.handleThingSpeakPeriodSummary = handleThingSpeakPeriodSummary.bind(this)
+
         this.handleNumDays = handleNumDays.bind(this)
         this.updateWindowDimensions = updateWindowDimensions.bind(this)
         this.barGraphSelector = barGraphSelector.bind(this)
@@ -248,7 +255,7 @@ class App extends Component {
         const fieldID = this.state.thingSpeakFieldID ? `&fieldID=${this.state.thingSpeakFieldID}` : ''
         const startDate = firstEntry ? `&startDate=${firstEntry}` : ''
         const endDate = lastEntry ? `&endDate=${lastEntry}` : ''
-        const urlBuilder = encodeURI(`https://opens3.net/channel-grapher.html?${thingSpeakID}${fieldID}${startDate}${endDate}`)
+        const urlBuilder = encodeURI(`https://opens3.net/channel-grapher.html?${thingSpeakID}${fieldID}`)
         return (
             <Container fluid>
                 <div style={{
@@ -349,6 +356,11 @@ class App extends Component {
                                    handleThingSpeakPeriod={this.handleThingSpeakPeriod}
                                    toggleLiveUpdates={this.toggleLiveUpdates}
                                    timeZone={this.state.timeZone}
+                                   thingSpeakPeriodSummary={this.thingSpeakPeriodSummary}
+                                   thingSpeakPeriodType={this.thingSpeakPeriodType}
+                                   handleThingSpeakPeriodSummary={this.handleThingSpeakPeriodSummary}
+                                   handleThingSpeakPeriodType={this.handleThingSpeakPeriodType}
+
                         />
                     </Tab>
                     <Tab eventKey="Info"

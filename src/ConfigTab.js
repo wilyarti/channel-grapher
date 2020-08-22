@@ -13,6 +13,10 @@ const ConfigTab = (props) => {
         return (<option key={field} value={field}>{field ? field : 'Select'} minutes</option>)
     })
 
+    const optionsSummaryType = ['','timescale','sum', 'average', 'median'].map((field) => {
+        return (<option key={field} value={field}>{field ? field : 'Select type'}</option>)
+    })
+
     return (
         <Row>
             <Col sm={4}>
@@ -97,6 +101,24 @@ const ConfigTab = (props) => {
                             <Form.Control.Feedback type="invalid">
                                 Please provide a number less than 90.
                             </Form.Control.Feedback>
+                        </Form.Group>
+                        Summarize Data:
+                        <hr/>
+                        <Form.Group controlId="validPeriodSelectorSummary">
+                            <Form.Control as="select" value={props.thingSpeakPeriodSummary}
+                                          disabled={(props.channelNotVerified || props.isLoading)}
+                                          onChange={props.handleThingSpeakPeriodSummary}
+                                          type="text" required>
+                                {optionsPeriod}
+                            </Form.Control>
+                        </Form.Group>
+                        <Form.Group controlId="validPeriodSelectorType">
+                            <Form.Control as="select" value={props.thingSpeakPeriodType}
+                                          disabled={(props.channelNotVerified || props.isLoading)}
+                                          onChange={props.handleThingSpeakPeriodType}
+                                          type="text" required>
+                                {optionsSummaryType}
+                            </Form.Control>
                         </Form.Group>
                         <Button variant={!props.channelNotVerified ? 'primary' : 'danger'}
                                 disabled={(props.channelNotVerified || props.isLoading)}

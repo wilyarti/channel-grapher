@@ -181,6 +181,42 @@ export function handleThingSpeakPeriod(e) {
         this.refreshClickHandler()
     })
 }
+export function handleThingSpeakPeriodSummary(e) {
+    const defaultConfig = {
+        type: 'line',
+        datasets: [{
+            label: 'ThingSpeak Channel',
+            fill: true,
+            lineTension: 0,
+            pointRadius: 1,
+            borderColor: this.state.palette[this.state.config.datasets.length + 1].hex(),
+            data: [],
+        }]
+    }
+    this.setState({thingSpeakPeriodSummary: e.target.value, config: defaultConfig}, () => {
+        if (this.state.thingSpeakPeriodType !== '') {
+            this.refreshClickHandler()
+        }
+    })
+}
+export function handleThingSpeakPeriodType(e) {
+    const defaultConfig = {
+        type: 'line',
+        datasets: [{
+            label: 'ThingSpeak Channel',
+            fill: true,
+            lineTension: 0,
+            pointRadius: 1,
+            borderColor: this.state.palette[this.state.config.datasets.length + 1].hex(),
+            data: [],
+        }]
+    }
+    this.setState({thingSpeakPeriodType: e.target.value, config: defaultConfig}, () => {
+        if (this.state.thingSpeakPeriodSummary !== '') {
+            this.refreshClickHandler()
+        }
+    })
+}
 
 export function setDataSummaryInterval30() {
     this.barGraphSelector()
@@ -424,7 +460,8 @@ export function refreshClickHandler(dID) {
     const LOCATION = `&location=${true}`
     const TIMEZONE = `&timezone=${this.state.timeZone}`
     const PERIOD = `&minutes=${this.state.thingSpeakPeriod}`
-    const thingSpeakQuery = JSON.stringify({url: `https://api.thingspeak.com/channels/${this.state.thingSpeakID}/fields/${this.state.thingSpeakFieldID}.json?${APIKEY}${this.state.thingSpeakPeriod ? PERIOD : START + END}${SUM}${STATUS}${METADATA}${LOCATION}${TIMEZONE}`})
+    const SUMMARY = this.state.thingSpeakPeriodType ? `&${this.state.thingSpeakPeriodType}=${this.state.thingSpeakPeriodSummary}` : '';
+    const thingSpeakQuery = JSON.stringify({url: `https://api.thingspeak.com/channels/${this.state.thingSpeakID}/fields/${this.state.thingSpeakFieldID}.json?${APIKEY}${this.state.thingSpeakPeriod ? PERIOD : START + END}${SUM}${STATUS}${METADATA}${LOCATION}${TIMEZONE}${SUMMARY}`})
     console.log(thingSpeakQuery)
     fetch('/getJSON', {
         method: 'POST',
